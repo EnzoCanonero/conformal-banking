@@ -80,8 +80,8 @@ def test_prediction_set_metrics_measure_coverage_and_size() -> None:
     assert average_size == 1.5
 
 
-def test_lac_pipeline_reaches_target_coverage_on_iid_data() -> None:
-    random_generator = np.random.default_rng(42)
+def test_lac_pipeline_reaches_target_coverage_across_iid_simulations() -> None:
+    number_of_simulations = 30
     number_of_calibration_samples = 1_000
     number_of_test_samples = 5_000
     number_of_classes = 3
@@ -89,29 +89,35 @@ def test_lac_pipeline_reaches_target_coverage_on_iid_data() -> None:
 
     number_of_samples = number_of_calibration_samples + number_of_test_samples
     class_concentration = np.ones(number_of_classes)
+    coverages: list[float] = []
 
-    probabilities = random_generator.dirichlet(
-        class_concentration,
-        size=number_of_samples,
-    )
-    sampled_classes = random_generator.multinomial(1, probabilities)
-    labels = np.argmax(sampled_classes, axis=1)
+    for seed in range(number_of_simulations):
+        random_generator = np.random.default_rng(seed)
 
-    calibration_probabilities = probabilities[:number_of_calibration_samples]
-    calibration_labels = labels[:number_of_calibration_samples]
-    test_probabilities = probabilities[number_of_calibration_samples:]
-    test_labels = labels[number_of_calibration_samples:]
+        probabilities = random_generator.dirichlet(
+            class_concentration,
+            size=number_of_samples,
+        )
+        sampled_classes = random_generator.multinomial(1, probabilities)
+        labels = np.argmax(sampled_classes, axis=1)
 
-    calibration_scores = lac_scores(
-        calibration_probabilities,
-        calibration_labels,
-    )
-    threshold = conformal_quantile(calibration_scores, alpha)
-    prediction_sets = lac_prediction_sets(test_probabilities, threshold)
-    coverage = empirical_coverage(prediction_sets, test_labels)
+        calibration_probabilities = probabilities[:number_of_calibration_samples]
+        calibration_labels = labels[:number_of_calibration_samples]
+        test_probabilities = probabilities[number_of_calibration_samples:]
+        test_labels = labels[number_of_calibration_samples:]
 
+        calibration_scores = lac_scores(
+            calibration_probabilities,
+            calibration_labels,
+        )
+        threshold = conformal_quantile(calibration_scores, alpha)
+        prediction_sets = lac_prediction_sets(test_probabilities, threshold)
+        coverage = empirical_coverage(prediction_sets, test_labels)
+        coverages.append(coverage)
+
+    average_coverage = float(np.mean(coverages))
     target_coverage = 1.0 - alpha
-    coverage_tolerance = 0.02
-    coverage_difference = abs(coverage - target_coverage)
+    coverage_tolerance = 0.01
+    coverage_difference = abs(average_coverage - target_coverage)
 
     assert coverage_difference <= coverage_tolerance
