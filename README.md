@@ -20,8 +20,10 @@ metrics. Its singleton policy automates one-class prediction sets and defers all
 other cases. A synthetic IID multiclass example exercises the complete workflow
 and measures both marginal coverage and the automation-versus-error trade-off.
 
-The next milestone will apply this decision layer to BANKING77 before moving to
-LLM and distribution-shift experiments.
+BANKING77 data loading now preserves the official test set and creates a
+reproducible, stratified training/calibration split with a shared intent mapping.
+The next milestone will train the TF-IDF/logistic-regression baseline before
+applying the decision layer to real data.
 
 ## Installation
 
@@ -38,12 +40,18 @@ For development tools:
 python -m pip install -e ".[dev]"
 ```
 
-The synthetic example will use scikit-learn, which is kept separate from the
-core package:
+The synthetic example and BANKING77 data helpers use scikit-learn, which is
+kept separate from the NumPy-only conformal core:
 
 ```bash
 python -m pip install -e ".[example]"
 ```
+
+## BANKING77 data
+
+Follow the [data setup instructions](data/README.md) to download the pinned
+official files, load them and create the 75/25 training/calibration split.
+The BANKING77 model and evaluation experiment are not implemented yet.
 
 ## Synthetic IID example
 
