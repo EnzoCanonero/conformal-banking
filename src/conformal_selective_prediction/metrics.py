@@ -31,24 +31,18 @@ def automated_error_rate(
     if automated_samples.ndim != 1:
         raise ValueError("automation_mask must be one-dimensional")
 
-    if predicted_labels.ndim != 1:
-        raise ValueError("predictions must be one-dimensional")
-
-    if true_labels.ndim != 1:
-        raise ValueError("labels must be one-dimensional")
-
     number_of_samples = automated_samples.size
 
     if number_of_samples == 0:
         raise ValueError("automation_mask must contain at least one sample")
 
-    if predicted_labels.size != number_of_samples:
+    if predicted_labels.shape != automated_samples.shape:
         raise ValueError(
-            "predictions and automation_mask must contain the same samples"
+            "predictions and automation_mask must have the same shape"
         )
 
-    if true_labels.size != number_of_samples:
-        raise ValueError("labels and automation_mask must contain the same samples")
+    if true_labels.shape != automated_samples.shape:
+        raise ValueError("labels and automation_mask must have the same shape")
 
     # The error rate is undefined if no samples are automated.
     if not np.any(automated_samples):
@@ -76,18 +70,16 @@ def empirical_coverage(prediction_sets: ArrayLike, labels: ArrayLike) -> float:
         raise ValueError("prediction_sets must be two-dimensional")
 
     number_of_samples = included_classes.shape[0]
-    number_of_classes = included_classes.shape[1]
 
     if number_of_samples == 0:
         raise ValueError("prediction_sets must contain at least one sample")
 
-    if true_labels.size != number_of_samples:
-        raise ValueError("prediction_sets and labels must contain the same samples")
+    if true_labels.shape != (number_of_samples,):
+        raise ValueError("labels must be one-dimensional with one label per sample")
 
     labels_below_range = np.any(true_labels < 0)
-    labels_above_range = np.any(true_labels >= number_of_classes)
 
-    if labels_below_range or labels_above_range:
+    if labels_below_range:
         raise ValueError("labels must refer to existing classes")
 
     # Check whether the true class is included for each sample.

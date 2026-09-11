@@ -11,15 +11,13 @@ def lac_scores(probabilities: ArrayLike, labels: ArrayLike) -> NDArray[np.float6
         raise ValueError("probabilities must be two-dimensional")
 
     number_of_samples = predicted_probabilities.shape[0]
-    number_of_classes = predicted_probabilities.shape[1]
 
-    if true_labels.size != number_of_samples:
-        raise ValueError("probabilities and labels must contain the same samples")
+    if true_labels.shape != (number_of_samples,):
+        raise ValueError("labels must be one-dimensional with one label per sample")
 
     labels_below_range = np.any(true_labels < 0)
-    labels_above_range = np.any(true_labels >= number_of_classes)
 
-    if labels_below_range or labels_above_range:
+    if labels_below_range:
         raise ValueError("labels must refer to existing classes")
 
     # For each sample, select the probability assigned to its true class.
