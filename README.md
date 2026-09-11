@@ -22,8 +22,9 @@ and measures both marginal coverage and the automation-versus-error trade-off.
 
 BANKING77 data loading now preserves the official test set and creates a
 reproducible, stratified training/calibration split with a shared intent mapping.
-The next milestone will train the TF-IDF/logistic-regression baseline before
-applying the decision layer to real data.
+The TF-IDF/logistic-regression baseline fits both preprocessing and the classifier
+on the training partition. The next milestone will connect its probabilities to
+the conformal decision layer and compare LAC with naive thresholding.
 
 ## Installation
 
@@ -40,18 +41,40 @@ For development tools:
 python -m pip install -e ".[dev]"
 ```
 
-The synthetic example and BANKING77 data helpers use scikit-learn, which is
+The synthetic example and BANKING77 workflow use scikit-learn, which is
 kept separate from the NumPy-only conformal core:
 
 ```bash
 python -m pip install -e ".[example]"
 ```
 
-## BANKING77 data
+## BANKING77 baseline
 
 Follow the [data setup instructions](data/README.md) to download the pinned
 official files, load them and create the 75/25 training/calibration split.
-The BANKING77 model and evaluation experiment are not implemented yet.
+
+The baseline uses word unigrams and bigrams with multinomial logistic regression.
+It starts with L2 regularization, `C=1.0`, the `lbfgs` solver and a maximum of
+1,000 iterations, without hyperparameter tuning.
+
+```python
+from conformal_selective_prediction.data import load_banking77
+from conformal_selective_prediction.models import fit_tfidf_classifier
+
+data = load_banking77("data/raw/banking77", random_seed=42)
+model = fit_tfidf_classifier(data.train)
+
+calibration_probabilities = model.predict_proba(data.calibration.texts)
+test_probabilities = model.predict_proba(data.test.texts)
+```
+
+Prediction transforms held-out texts without refitting the vectorizer or
+classifier. Probability column `j` corresponds to `model.classes_[j]`. With all
+77 intents present in training, these are the indices `0` through `76` from
+`data.class_names`; no second label encoding is introduced.
+
+The BANKING77 conformal evaluation experiment is not implemented yet. The
+calibration and test partitions must not be used to tune the model.
 
 ## Synthetic IID example
 
