@@ -30,6 +30,8 @@ def conformal_quantile(scores: ArrayLike, alpha: float) -> float:
         return float("inf")
 
     sorted_scores = np.sort(calibration_scores)
+
+    # raw_quantile_rank starts from 1, subtract 1 to match Python indexing
     quantile_index = quantile_rank - 1
     threshold = sorted_scores[quantile_index]
 

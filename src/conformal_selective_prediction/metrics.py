@@ -18,6 +18,7 @@ def automation_rate(automation_mask: ArrayLike) -> float:
 
 
 # Measure classification error among samples selected for automation.
+# Measure the classification error rate on automated samples only.
 def automated_error_rate(
     predictions: ArrayLike,
     labels: ArrayLike,
@@ -49,12 +50,18 @@ def automated_error_rate(
     if true_labels.size != number_of_samples:
         raise ValueError("labels and automation_mask must contain the same samples")
 
+    # The error rate is undefined if no samples are automated.
     if not np.any(automated_samples):
         return float("nan")
 
+    # Keep only the predictions and labels for automated samples.
     automated_predictions = predicted_labels[automated_samples]
     automated_labels = true_labels[automated_samples]
+
+    # Check which automated predictions are incorrect.
     incorrect_predictions = automated_predictions != automated_labels
+
+    # Compute the fraction of automated samples classified incorrectly.
     error_rate = np.mean(incorrect_predictions)
 
     return float(error_rate)
@@ -83,8 +90,11 @@ def empirical_coverage(prediction_sets: ArrayLike, labels: ArrayLike) -> float:
     if labels_below_range or labels_above_range:
         raise ValueError("labels must refer to existing classes")
 
+    # Check whether the true class is included for each sample.
     sample_indices = np.arange(number_of_samples)
     covered_samples = included_classes[sample_indices, true_labels]
+
+    # Coverage is the fraction of samples for which this is true.
     coverage = np.mean(covered_samples)
 
     return float(coverage)
@@ -102,7 +112,10 @@ def average_set_size(prediction_sets: ArrayLike) -> float:
     if number_of_samples == 0:
         raise ValueError("prediction_sets must contain at least one sample")
 
+    # Count how many classes are included in each prediction set.
     set_sizes = np.sum(included_classes, axis=1)
+
+    # Average the set sizes over all samples.
     average_size = np.mean(set_sizes)
 
     return float(average_size)

@@ -22,8 +22,12 @@ def lac_scores(probabilities: ArrayLike, labels: ArrayLike) -> NDArray[np.float6
     if labels_below_range or labels_above_range:
         raise ValueError("labels must refer to existing classes")
 
+    # For each sample, select the probability assigned to its true class.
     sample_indices = np.arange(number_of_samples)
     true_class_probabilities = predicted_probabilities[sample_indices, true_labels]
+
+    # The LAC score is one minus the probability of the true class.
+    # Higher scores therefore correspond to lower confidence in the true label.
     scores = 1.0 - true_class_probabilities
 
     return scores
