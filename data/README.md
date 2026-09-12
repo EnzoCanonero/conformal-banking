@@ -68,3 +68,10 @@ The official files have no exact text overlap, but six text values occur in
 both official splits after lowercasing and trimming whitespace. Preserve the
 official data rather than silently deduplicating it, and report this upstream
 overlap when interpreting the baseline results.
+
+The official training set has 35–187 examples per intent, whereas the official
+test set has exactly 40 per intent. The stratified calibration split follows the
+training mixture, not the balanced test mixture. These fixed splits therefore
+do not establish exchangeability; report measured coverage and investigate
+class-level differences rather than assuming the marginal guarantee applies
+unchanged to the official test set.

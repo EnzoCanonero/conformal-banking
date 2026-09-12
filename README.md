@@ -23,8 +23,10 @@ and measures both marginal coverage and the automation-versus-error trade-off.
 BANKING77 data loading now preserves the official test set and creates a
 reproducible, stratified training/calibration split with a shared intent mapping.
 The TF-IDF/logistic-regression baseline fits both preprocessing and the classifier
-on the training partition. The next milestone will connect its probabilities to
-the conformal decision layer and compare LAC with naive thresholding.
+on the training partition. A single-split BANKING77 experiment now compares LAC
+singleton selection with naive confidence thresholding on the same predictions.
+Repeated-split evaluation, uncertainty intervals and diagnostic figures remain
+the next milestone.
 
 ## Installation
 
@@ -73,8 +75,40 @@ classifier. Probability column `j` corresponds to `model.classes_[j]`. With all
 77 intents present in training, these are the indices `0` through `76` from
 `data.class_names`; no second label encoding is introduced.
 
-The BANKING77 conformal evaluation experiment is not implemented yet. The
-calibration and test partitions must not be used to tune the model.
+### End-to-end experiment
+
+After downloading the data, run from the repository root:
+
+```bash
+python examples/banking77_baseline.py
+```
+
+The experiment uses seed `42`, LAC miscoverage level `alpha=0.1` and a naive
+confidence threshold of `0.5`, fixed before test evaluation. These values are
+defined at the top of the script. The calibration partition is used only to
+estimate the LAC score threshold; neither held-out partition is used for model
+tuning.
+
+LAC automates only singleton prediction sets. The naive policy automates the
+most probable intent when its probability is at least `0.5`. Both policies use
+the same classifier and test probabilities. The script reports classifier
+accuracy, LAC coverage and average set size, and each policy's automation rate
+and automated-case error. An error of `nan` means no cases were automated, not
+zero errors.
+
+The first run with these settings gives classifier accuracy `0.841`:
+
+| Policy | Set coverage | Average set size | Automation rate | Automated-case error |
+|:-------|-------------:|-----------------:|----------------:|---------------------:|
+| LAC singleton | 0.895 | 1.524 | 0.547 | 0.054 |
+| Naive threshold | — | — | 0.240 | 0.015 |
+
+This is a comparison at two different operating points, not a matched-automation
+comparison or a policy ranking. The LAC target applies to prediction-set coverage,
+not error among automated cases; the naive threshold has no conformal coverage
+guarantee. A single split does not establish stability or satisfy the full
+Phase 1 acceptance gate. See the [data limitations](data/README.md#split-limitations)
+when interpreting the results.
 
 ## Synthetic IID example
 
