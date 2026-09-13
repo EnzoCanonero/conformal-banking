@@ -1,3 +1,6 @@
+from math import sqrt
+from statistics import NormalDist
+
 import numpy as np
 from numpy.typing import ArrayLike
 
@@ -111,3 +114,38 @@ def average_set_size(prediction_sets: ArrayLike) -> float:
     average_size = np.mean(set_sizes)
 
     return float(average_size)
+
+
+# Estimate a binomial proportion's uncertainty with a Wilson score interval.
+def binomial_confidence_interval(
+    successes: int,
+    total: int,
+    confidence_level: float = 0.95,
+) -> tuple[float, float]:
+    if total < 0 or not 0 <= successes <= total:
+        raise ValueError("counts must satisfy 0 <= successes <= total")
+
+    if not 0.0 < confidence_level < 1.0:
+        raise ValueError("confidence_level must be between 0 and 1")
+
+    if total == 0:
+        return float("nan"), float("nan")
+
+    proportion = successes / total
+    upper_tail_probability = (1.0 + confidence_level) / 2.0
+    normal_quantile = NormalDist().inv_cdf(upper_tail_probability)
+    squared_quantile = normal_quantile**2
+
+    denominator = 1.0 + squared_quantile / total
+    adjusted_proportion = proportion + squared_quantile / (2.0 * total)
+    interval_center = adjusted_proportion / denominator
+
+    sampling_variance = proportion * (1.0 - proportion) / total
+    variance_adjustment = squared_quantile / (4.0 * total**2)
+    adjusted_standard_error = sqrt(sampling_variance + variance_adjustment)
+    interval_radius = normal_quantile * adjusted_standard_error / denominator
+
+    lower_bound = max(0.0, interval_center - interval_radius)
+    upper_bound = min(1.0, interval_center + interval_radius)
+
+    return lower_bound, upper_bound
