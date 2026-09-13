@@ -25,8 +25,8 @@ reproducible, stratified training/calibration split with a shared intent mapping
 The TF-IDF/logistic-regression baseline fits both preprocessing and the classifier
 on the training partition. A single-split BANKING77 experiment now compares LAC
 singleton selection with naive confidence thresholding on the same predictions.
-Repeated-split evaluation, uncertainty intervals and diagnostic figures remain
-the next milestone.
+A repeated-split validation script evaluates fixed policy grids and saves
+uncertainty intervals, class-level diagnostics and four comparison figures.
 
 ## Installation
 
@@ -43,8 +43,8 @@ For development tools:
 python -m pip install -e ".[dev]"
 ```
 
-The synthetic example and BANKING77 workflow use scikit-learn, which is
-kept separate from the NumPy-only conformal core:
+The examples use scikit-learn for modelling and Matplotlib for validation
+figures, kept separate from the NumPy-only conformal core:
 
 ```bash
 python -m pip install -e ".[example]"
@@ -109,6 +109,58 @@ not error among automated cases; the naive threshold has no conformal coverage
 guarantee. A single split does not establish stability or satisfy the full
 Phase 1 acceptance gate. See the [data limitations](data/README.md#split-limitations)
 when interpreting the results.
+
+### Repeated-split validation
+
+Run from the repository root after installing the `example` extra and downloading
+the data:
+
+```bash
+python examples/banking77_validation.py
+```
+
+The script uses seeds `7, 21, 42, 84, 123`. For each split it fits the model once,
+then reuses calibration scores and test probabilities over two fixed grids:
+
+- LAC `alpha`: `0.01, 0.05, 0.10, 0.15, 0.20, 0.30, 0.50`.
+- Naive confidence threshold: `0.0` through `1.0` in steps of `0.1`.
+
+The grids are defined at the top of the script, not selected from test results.
+No "best" threshold is chosen. Outputs go to the Git-ignored `outputs/banking77/`
+directory; rerunning replaces the same named files.
+
+| File | Contents |
+|:-----|:---------|
+| `config.json` | Seeds, grids, interval settings and library versions |
+| `lac_metrics.csv` | Per-split coverage, set size, empty-set rate and selection metrics |
+| `naive_metrics.csv` | Per-split naive selection metrics |
+| `class_coverage.csv` | Coverage and counts for each intent, split and alpha |
+| `set_sizes.csv` | Set-size counts and fractions, including empty sets |
+| `nominal_vs_empirical_coverage.png` | Coverage curves with per-split intervals |
+| `coverage_vs_set_size.png` | Coverage versus average prediction-set size |
+| `automation_vs_error.png` | LAC and naive automation-versus-error curves |
+| `set_size_distribution.png` | Mean per-split set-size fractions for alpha `0.01, 0.05, 0.10, 0.30` |
+
+Coverage and automated-case error include pointwise 95%
+[Wilson intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm).
+Coverage uses all test cases; automated-case error uses only the selected cases.
+The CSVs retain numerator and denominator counts. With no automated cases, the
+error and its interval are `nan`, and that operating point is omitted from the
+risk plot. Zero observed errors with a positive denominator still gives a
+nonzero upper interval bound.
+
+Every seed reuses the same official test set. Curves across seeds describe
+sensitivity to the training/calibration split, not independent new test samples.
+Counts are never pooled across seeds to construct intervals. Class-level
+intervals use only 40 examples per intent and are not simultaneous guarantees
+across all intents or grid points. The fixed, class-balanced test set also makes
+the global binomial intervals approximate diagnostics, not a proof of
+exchangeability or conformal validity on this benchmark.
+
+Increasing `alpha` shrinks LAC sets, so coverage and average set size cannot
+increase on a fixed split. Singleton automation need not be monotone: a set can
+move from multiple labels to one label and then become empty. Automated-case
+error remains an empirical measurement, not an `alpha`-level guarantee.
 
 ## Synthetic IID example
 

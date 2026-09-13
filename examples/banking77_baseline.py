@@ -29,27 +29,33 @@ def run_experiment(
     alpha: float,
     confidence_threshold: float,
 ) -> dict[str, float]:
+    # Fit both TF-IDF and the classifier on training data only.
     data = load_banking77(data_directory, random_seed=random_seed)
     model = fit_tfidf_classifier(data.train)
 
+    # LAC uses label IDs as probability-column indices, so their order must match.
     expected_classes = np.arange(len(data.class_names))
     if not np.array_equal(model.classes_, expected_classes):
         raise ValueError("model classes must match the dataset label indices")
 
+    # Estimate the LAC cutoff from true-label scores on calibration data only.
     calibration_probabilities = model.predict_proba(data.calibration.texts)
     calibration_scores = lac_scores(calibration_probabilities, data.calibration.labels)
     threshold = conformal_quantile(calibration_scores, alpha)
 
+    # Reuse the same test probabilities and top-label predictions for both policies.
     test_probabilities = model.predict_proba(data.test.texts)
     predicted_class_indices = np.argmax(test_probabilities, axis=1)
     test_predictions = model.classes_[predicted_class_indices]
     correct_predictions = test_predictions == data.test.labels
     accuracy = float(np.mean(correct_predictions))
 
+    # Set coverage measures true-label inclusion over all test cases, before selection.
     prediction_sets = lac_prediction_sets(test_probabilities, threshold)
     coverage = empirical_coverage(prediction_sets, data.test.labels)
     mean_set_size = average_set_size(prediction_sets)
 
+    # Defer empty and multi-label sets; a LAC singleton contains the top-probability class.
     lac_automation_mask = singleton_mask(prediction_sets)
     lac_automated_fraction = automation_rate(lac_automation_mask)
     lac_automated_error = automated_error_rate(
@@ -58,6 +64,7 @@ def run_experiment(
         lac_automation_mask,
     )
 
+    # Naive selection uses a fixed confidence cutoff, not the LAC score threshold.
     maximum_probabilities = np.max(test_probabilities, axis=1)
     naive_automation_mask = maximum_probabilities >= confidence_threshold
     naive_automated_fraction = automation_rate(naive_automation_mask)

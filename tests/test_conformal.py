@@ -4,6 +4,7 @@ import numpy as np
 
 from conformal_selective_prediction import (
     average_set_size,
+    binomial_confidence_interval,
     conformal_quantile,
     empirical_coverage,
     lac_prediction_sets,
@@ -121,3 +122,19 @@ def test_lac_pipeline_reaches_target_coverage_across_iid_simulations() -> None:
     coverage_difference = abs(average_coverage - target_coverage)
 
     assert coverage_difference <= coverage_tolerance
+
+
+def test_binomial_interval_handles_observed_and_empty_counts() -> None:
+    interval = binomial_confidence_interval(successes=50, total=100)
+    expected_interval = (0.4038315303659956, 0.5961684696340044)
+
+    np.testing.assert_allclose(interval, expected_interval)
+
+    lower_bound, upper_bound = binomial_confidence_interval(successes=0, total=100)
+
+    assert lower_bound == 0.0
+    assert upper_bound > 0.0
+
+    empty_interval = binomial_confidence_interval(successes=0, total=0)
+
+    assert all(math.isnan(bound) for bound in empty_interval)
