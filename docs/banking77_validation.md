@@ -209,7 +209,47 @@ python -m pip install -e ".[example]"
 python examples/banking77_validation.py
 ```
 
-The script writes the following files to Git-ignored `outputs/banking77/`.
+### Single-split walkthrough
+
+For the shorter end-to-end example, run:
+
+```bash
+python examples/banking77_baseline.py
+```
+
+It uses seed `42`, `alpha=0.1` and `tau=0.5`, with classifier accuracy `0.841`.
+The rounded results are:
+
+| Policy | Set coverage | Average set size | Automation rate | Automated-case error |
+|:-------|-------------:|-----------------:|----------------:|---------------------:|
+| LAC singleton | 0.895 | 1.524 | 0.547 | 0.054 |
+| Naive threshold | Not applicable | Not applicable | 0.240 | 0.015 |
+
+Seed 42 is one of the five splits summarized above, not an additional independent
+test set. This walkthrough makes each step visible but cannot establish stability
+on its own.
+
+The data loader and classifier can also be used directly:
+
+```python
+from conformal_selective_prediction.data import load_banking77
+from conformal_selective_prediction.models import fit_tfidf_classifier
+
+data = load_banking77("data/raw/banking77", random_seed=42)
+model = fit_tfidf_classifier(data.train)
+
+calibration_probabilities = model.predict_proba(data.calibration.texts)
+test_probabilities = model.predict_proba(data.test.texts)
+```
+
+Prediction transforms held-out texts without refitting the vectorizer or
+classifier. Probability column `j` corresponds to `model.classes_[j]`. With all
+77 intents in training, these are indices `0` through `76` from `data.class_names`;
+no second label encoding is introduced.
+
+### Validation outputs and report snapshots
+
+The validation script writes the following files to Git-ignored `outputs/banking77/`.
 Rerunning replaces the same-named files in that directory.
 
 | File | Contents |
