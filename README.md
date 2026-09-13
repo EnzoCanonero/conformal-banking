@@ -7,10 +7,10 @@ automation. Instead of forcing a model to act on every input, it produces
 prediction sets with coverage guarantees and defers uncertain cases to human
 review.
 
-The framework will first be validated on BANKING77 for automated banking-support
-routing. It will then be applied to LLM outputs and stress-tested under
-distribution shift to measure the trade-off between automation rate and
-operational risk.
+The first real-data baseline evaluates BANKING77 for automated banking-support
+routing. Later comparisons will use a frozen text encoder and LLM outputs,
+followed by distribution-shift experiments to measure the trade-off between
+automation rate and operational risk.
 
 ## Current status
 
@@ -27,6 +27,9 @@ on the training partition. A single-split BANKING77 experiment now compares LAC
 singleton selection with naive confidence thresholding on the same predictions.
 A repeated-split validation script evaluates fixed policy grids and saves
 uncertainty intervals, class-level diagnostics and four comparison figures.
+The [BANKING77 validation report](docs/banking77_validation.md) documents the
+results and their limitations. Frozen-encoder and APS comparisons remain
+follow-up milestones before the LLM phase.
 
 ## Installation
 
@@ -119,48 +122,23 @@ the data:
 python examples/banking77_validation.py
 ```
 
-The script uses seeds `7, 21, 42, 84, 123`. For each split it fits the model once,
-then reuses calibration scores and test probabilities over two fixed grids:
+The script fits one model for each of five training/calibration splits and
+evaluates fixed LAC and naive threshold grids on the unchanged official test
+set. No "best" threshold is chosen. CSVs, configuration and figures are saved
+under Git-ignored `outputs/banking77/`.
 
-- LAC `alpha`: `0.01, 0.05, 0.10, 0.15, 0.20, 0.30, 0.50`.
-- Naive confidence threshold: `0.0` through `1.0` in steps of `0.1`.
+At `alpha=0.1`, LAC coverage averages **90.08%** (split range **89.51–90.62%**).
+The singleton policy automates **53.49%** of requests with **5.51%** error among
+automated cases, on average. These are per-split averages, not estimates from
+five independent test sets. Coverage is much weaker for some intents, and the
+marginal target does not guarantee low automated-case error.
 
-The grids are defined at the top of the script, not selected from test results.
-No "best" threshold is chosen. Outputs go to the Git-ignored `outputs/banking77/`
-directory; rerunning replaces the same named files.
+![BANKING77 automation versus automated-case error for LAC and naive thresholding](docs/figures/banking77/automation_vs_error.png)
 
-| File | Contents |
-|:-----|:---------|
-| `config.json` | Seeds, grids, interval settings and library versions |
-| `lac_metrics.csv` | Per-split coverage, set size, empty-set rate and selection metrics |
-| `naive_metrics.csv` | Per-split naive selection metrics |
-| `class_coverage.csv` | Coverage and counts for each intent, split and alpha |
-| `set_sizes.csv` | Set-size counts and fractions, including empty sets |
-| `nominal_vs_empirical_coverage.png` | Coverage curves with per-split intervals |
-| `coverage_vs_set_size.png` | Coverage versus average prediction-set size |
-| `automation_vs_error.png` | LAC and naive automation-versus-error curves |
-| `set_size_distribution.png` | Mean per-split set-size fractions for alpha `0.01, 0.05, 0.10, 0.30` |
-
-Coverage and automated-case error include pointwise 95%
-[Wilson intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm).
-Coverage uses all test cases; automated-case error uses only the selected cases.
-The CSVs retain numerator and denominator counts. With no automated cases, the
-error and its interval are `nan`, and that operating point is omitted from the
-risk plot. Zero observed errors with a positive denominator still gives a
-nonzero upper interval bound.
-
-Every seed reuses the same official test set. Curves across seeds describe
-sensitivity to the training/calibration split, not independent new test samples.
-Counts are never pooled across seeds to construct intervals. Class-level
-intervals use only 40 examples per intent and are not simultaneous guarantees
-across all intents or grid points. The fixed, class-balanced test set also makes
-the global binomial intervals approximate diagnostics, not a proof of
-exchangeability or conformal validity on this benchmark.
-
-Increasing `alpha` shrinks LAC sets, so coverage and average set size cannot
-increase on a fixed split. Singleton automation need not be monotone: a set can
-move from multiple labels to one label and then become empty. Automated-case
-error remains an empirical measurement, not an `alpha`-level guarantee.
+See the [full validation report](docs/banking77_validation.md) for the four
+figures, explanations of the curves, intent-level diagnostics, uncertainty,
+limitations and reproduction instructions. The versioned figures are report
+snapshots; experiment reruns leave them unchanged.
 
 ## Synthetic IID example
 
