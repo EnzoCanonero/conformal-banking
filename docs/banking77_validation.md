@@ -23,7 +23,8 @@ The [validation script](../examples/banking77_validation.py) uses the official
   regression, with L2 regularization, `C=1.0`, `lbfgs`, and at most 1,000 iterations.
   Both preprocessing and classifier fitting use only the training partition.
 - Fit once per seed, then reuse calibration scores and test probabilities across
-  all policy settings. No model or threshold is selected using test performance.
+  all policy settings. No model or deployment threshold is selected using test
+  performance. The red plot highlight is a post-hoc descriptive comparison.
 
 The LAC grid is `alpha = 0.01, 0.05, 0.10, 0.15, 0.20, 0.30, 0.50`. The naive
 confidence grid runs from `0.0` through `1.0` in steps of `0.1`. Both were fixed
@@ -101,7 +102,7 @@ a better automation policy: empty sets also reduce the average and are deferred.
 
 ### 3. Automation versus error
 
-![Automation rate versus error on automated cases for LAC and naive thresholding, one trace per split](figures/banking77/automation_vs_error.png)
+![Automation rate versus error on automated cases for LAC and naive thresholding, highlighting LAC alpha 0.3 in red across five splits](figures/banking77/automation_vs_error.png)
 
 The horizontal axis is the fraction of all requests automated. The vertical
 axis is the fraction of those automated predictions that are incorrect. For
@@ -109,6 +110,8 @@ example, a point at `(0.60, 0.05)` would mean 600 automated requests per 1,000,
 including 30 incorrect decisions, with the remaining 400 deferred.
 
 - Blue solid lines with circles represent LAC; each point uses a different alpha.
+- Red circles labeled "best trade off" mark `alpha=0.3` on each LAC trace, not a
+  separate method.
 - Orange dashed lines with squares represent naive thresholding; each point uses
   a different confidence cutoff.
 - There are five traces per method, one per split. Overlapping traces are not
@@ -127,6 +130,46 @@ observed automated errors in any split, but automates only 6.03% of cases on
 average. Each run selects only 170–207 cases, with a positive 95% error-interval
 upper bound of approximately 1.82–2.21%. Zero observed error is not zero risk.
 Points with no automated cases have undefined error (`nan`) and are omitted.
+
+#### Where LAC is favorable
+
+The clearest local advantage is around **65–68% automation**: the red LAC
+`alpha=0.3` points sit below and to the right of the evaluated naive `tau=0.2`
+points. LAC handles more requests while making fewer errors as a fraction of
+the automated cases.
+
+As above, values are per-split means with minimum–maximum ranges, not confidence
+intervals or pooled test estimates.
+
+| Evaluated setting | Automation rate | Error among automated cases |
+|:------------------|----------------:|----------------------------:|
+| LAC, alpha = 0.3 (red) | 68.08% (67.73–68.44%) | 5.18% (4.93–5.51%) |
+| Naive, tau = 0.2 | 65.06% (64.64–65.29%) | 6.46% (6.36–6.58%) |
+
+The mean difference is **3.02 percentage points more automation and 1.28
+percentage points less automated-case error**. Both improvements hold in each
+of the five paired splits. This compares actual evaluated points; it does not
+interpolate between naive cutoffs, establish a continuous winning region, or
+demonstrate statistical significance. The same test requests are reused across
+splits, so these are not five independent confirmation studies.
+
+Why highlight `alpha=0.3`? It retains almost all the automation of `alpha=0.2`
+(68.08% versus 68.25%), with lower observed error (5.18% versus 5.91%). It is an
+informative high-automation trade-off in the tested grid, not a uniquely optimal
+alpha. A stricter naive cutoff can yield lower error at lower automation; for
+example, `tau=0.5` gives 1.33% error with 24.49% automation.
+
+There is also a coverage trade-off: `alpha=0.3` targets **70% marginal set
+coverage**, with 70.86% observed on average, rather than the 90% reference target.
+Its 5.18% automated-case error is an empirical result, not a conformal guarantee.
+If 90% set coverage is required, the red setting is not an eligible alternative.
+
+The highlight was chosen after inspecting test results, solely to explain the
+plot. Selecting a deployment policy would require an explicit error budget,
+automation objective and coverage requirement, with selection on separate
+validation data rather than this test set. The red points are not a preselected
+winner or evidence that conformal prediction is always better than confidence
+thresholding.
 
 ### 4. Prediction-set-size distribution
 
@@ -191,6 +234,11 @@ direction with alpha, and aggregate results vary little across the tested
 splits. Singleton selection gives a measurable automation-versus-error trade-off,
 but it has no automatic-error guarantee and weak coverage for some intents.
 
+There is a concrete local advantage: at `alpha=0.3`, LAC achieves higher
+automation and lower automated-case error than naive `tau=0.2` in every tested
+split. This favorable high-automation comparison does not establish overall
+dominance or a best deployment threshold, and uses a lower 70% coverage target.
+
 The next comparisons are a frozen pretrained encoder versus TF-IDF, and APS
 versus LAC on the same data protocol. Neither is assumed to improve the baseline.
 Those comparisons remain outstanding before the LLM phase; this report does not
@@ -198,8 +246,10 @@ mark the broader Phase 1 acceptance gate as complete.
 
 ## Reproduce the report
 
-The code snapshot for these results is commit `3ed6f5f`. Recorded library versions
-are NumPy `2.4.6`, scikit-learn `1.9.0` and Matplotlib `3.11.1`.
+The code snapshot for the numerical results is commit `3ed6f5f`. The red
+`alpha=0.3` highlight was added later using the same saved metrics; it does not
+change the evaluation or its grids. Recorded library versions are NumPy `2.4.6`,
+scikit-learn `1.9.0` and Matplotlib `3.11.1`.
 
 From the repository root, use Python 3.12, follow the pinned
 [data download instructions](../data/README.md#download), then run:
