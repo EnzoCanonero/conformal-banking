@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from .scores import _aps_class_scores
+from .scores import _aps_class_scores, _socop_class_scores
 
 
 # Construct LAC prediction sets from class probabilities.
@@ -30,6 +30,21 @@ def aps_prediction_sets(
     class_scores = _aps_class_scores(probabilities)
 
     # Include scores at the threshold, without adding a label that crosses it.
+    prediction_sets = class_scores <= threshold
+
+    return prediction_sets
+
+
+# Construct SOCOP sets with the same positive regularization used for calibration.
+def socop_prediction_sets(
+    probabilities: ArrayLike,
+    threshold: float,
+    *,
+    regularization: float,
+) -> NDArray[np.bool_]:
+    class_scores = _socop_class_scores(probabilities, regularization)
+
+    # Include every label whose entry score is at or below the calibrated threshold.
     prediction_sets = class_scores <= threshold
 
     return prediction_sets
