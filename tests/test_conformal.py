@@ -3,6 +3,8 @@ import math
 import numpy as np
 
 from conformal_selective_prediction import (
+    aps_prediction_sets,
+    aps_scores,
     average_set_size,
     binomial_confidence_interval,
     conformal_quantile,
@@ -58,6 +60,43 @@ def test_lac_prediction_sets_include_scores_at_the_threshold() -> None:
         [
             [True, True, False],
             [True, False, False],
+        ]
+    )
+    np.testing.assert_array_equal(prediction_sets, expected_sets)
+
+
+def test_aps_scores_accumulate_in_rank_order_with_stable_ties() -> None:
+    probabilities = np.array(
+        [
+            [0.25, 0.50, 0.25],
+            [0.25, 0.50, 0.25],
+            [0.25, 0.50, 0.25],
+        ]
+    )
+    labels = np.array([0, 1, 2])
+
+    scores = aps_scores(probabilities, labels)
+
+    expected_scores = np.array([0.75, 0.50, 1.00])
+    np.testing.assert_allclose(scores, expected_scores)
+
+
+def test_aps_prediction_sets_use_the_inclusive_score_threshold() -> None:
+    probabilities = np.array(
+        [
+            [0.25, 0.50, 0.25],
+            [0.875, 0.125, 0.00],
+            [0.25, 0.125, 0.625],
+        ]
+    )
+
+    prediction_sets = aps_prediction_sets(probabilities, threshold=0.75)
+
+    expected_sets = np.array(
+        [
+            [True, True, False],
+            [False, False, False],
+            [False, False, True],
         ]
     )
     np.testing.assert_array_equal(prediction_sets, expected_sets)

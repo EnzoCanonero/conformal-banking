@@ -1,4 +1,4 @@
-# Conformal Selective Prediction
+# Conformal Banking: From Classifiers to LLMs
 
 [![Tests](https://github.com/EnzoCanonero/conformal-selective-prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/EnzoCanonero/conformal-selective-prediction/actions/workflows/ci.yml)
 
