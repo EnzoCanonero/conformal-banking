@@ -1,5 +1,6 @@
+import csv
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -85,3 +86,13 @@ def load_manifest(input_directory: Path) -> dict[str, Any]:
         manifest: dict[str, Any] = json.load(manifest_file)
 
     return manifest
+
+
+# Save one table with its column names and unrounded numerical results.
+def save_csv(file_path: Path, rows: Sequence[Mapping[str, object]]) -> None:
+    field_names = list(rows[0])
+
+    with file_path.open("w", encoding="utf-8", newline="") as output_file:
+        writer = csv.DictWriter(output_file, fieldnames=field_names)
+        writer.writeheader()
+        writer.writerows(rows)
