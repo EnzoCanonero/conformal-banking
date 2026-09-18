@@ -1,61 +1,56 @@
-# BANKING77 baseline validation
+# BANKING77: the LAC baseline
 
-The TF-IDF/logistic-regression baseline reaches 90.08% mean empirical coverage
-at the 90% LAC target across five training/calibration splits. Singleton selection
-automates 53.49% of requests, with 5.51% error among automated cases. These
-aggregate results are stable across the tested splits, but coverage varies
-substantially by intent. This is a reproducible baseline, not a deployment
-approval or a guarantee on automated-case error.
+At the 90% LAC target, the TF-IDF/logistic-regression baseline reaches 90.08%
+mean coverage across five splits. Singleton selection automates 53.49% of
+requests, with 5.51% error among automated cases. Aggregate coverage is stable,
+but intent-level differences prevent describing the policy as uniformly reliable.
+
+This is the historical baseline, with **2,501 calibration examples per run**.
+The later [score comparison](banking77/score_comparison/comparison.md) reserves
+some of those records for SOCOP tuning and recalibrates all methods on 1,251
+examples. Its fresh LAC results are therefore slightly different; the numbers
+and figures in this report retain the original experiment.
 
 ## Experiment setup
 
 The [validation script](../examples/banking77_validation.py) uses the official
-[BANKING77 files](../data/README.md), pinned to dataset revision
-`57ec275d8078af65b7731c2a98be812d844a6d6b`.
+[BANKING77 files](../data/README.md), pinned to revision
+`57ec275d8078af65b7731c2a98be812d844a6d6b`:
 
 - Split the official training data into 7,502 model-training and 2,501 calibration
   examples, stratified by intent.
 - Preserve all 3,080 official test examples, with 40 examples for each of 77
   intents. Every run evaluates the same test records.
-- Use split seeds `7, 21, 42, 84, 123`. Each seed changes both the training and
-  calibration partitions.
-- Fit word TF-IDF unigrams and bigrams followed by multinomial logistic
-  regression, with L2 regularization, `C=1.0`, `lbfgs`, and at most 1,000 iterations.
-  Both preprocessing and classifier fitting use only the training partition.
-- Fit once per seed, then reuse calibration scores and test probabilities across
-  all policy settings. No model or deployment threshold is selected using test
-  performance. The red plot highlight is a post-hoc descriptive comparison.
+- Use seeds `7, 21, 42, 84, 123` to vary training and calibration partitions.
+- Fit word TF-IDF unigrams and bigrams followed by logistic regression. Both
+  preprocessing and classifier fitting use only the training partition; the
+  [script](../examples/banking77_validation.py) records the fixed model settings.
+- Fit once per seed and reuse predictions across policy settings, without
+  choosing a deployment threshold from test performance.
 
 The LAC grid is `alpha = 0.01, 0.05, 0.10, 0.15, 0.20, 0.30, 0.50`. The naive
 confidence grid runs from `0.0` through `1.0` in steps of `0.1`. Both were fixed
-before evaluation. The set-size distribution figure displays only
-`alpha = 0.01, 0.05, 0.10, 0.30`; the CSVs and other figures retain the full grid.
+before evaluation.
 
 ### What the two policies do
 
-**LAC singleton selection:** calibrate a threshold `q` using true-label scores
-`1 - p_y(x)` on the calibration partition. Include each label whose score is
-at most `q`. Automate only if exactly one label is included; defer empty and
-multi-label sets. `alpha` sets the nominal miscoverage level for the prediction
-set, not the allowed error among automated decisions.
-
-**Naive confidence thresholding:** predict the label with the highest model
-probability and automate when that probability is at least `tau`. Otherwise,
-defer. There is no conformal calibration step and no explicit check of the
-second-best label. For example, `tau=0.8` accepts a top probability of `0.85`
-but rejects `0.70`. It does not guarantee an automated-case error below 20%.
+- **LAC** uses calibration labels to set a class-probability cutoff. Exactly
+  one surviving intent means automatic routing; zero or several means review.
+  A 90% coverage target concerns retaining the true intent in the set, not
+  correctness among automated decisions.
+- **Naive thresholding** routes the top answer when its probability reaches
+  `tau`, without checking the second-best intent. A cutoff of `0.8` does not
+  guarantee an automated-case error below 20%.
 
 ## Results at the reference settings
 
-The following settings, `alpha=0.1` and `tau=0.5`, are inherited from the
-[single-split example](../examples/banking77_baseline.py), not chosen as the best
-points on these curves. Classifier accuracy averages 84.01%, with a split range
-of 83.83–84.29%.
+The reference settings, `alpha=0.1` and `tau=0.5`, come from the
+[single-split example](../examples/banking77_baseline.py), not a search for the
+best test results. Classifier accuracy averages 84.01% (83.83–84.29%).
 
-Values below are the arithmetic mean of the five per-split metrics, followed by
-their minimum–maximum range in parentheses. These ranges are descriptive split
-variation, **not confidence intervals**. Automated-error rates are averaged per
-split, not calculated by pooling repeated test observations.
+Tables report arithmetic means across five splits, with minimum–maximum ranges.
+Ranges describe split variation, **not confidence intervals**; error rates are
+averaged per split rather than pooled across repeated test observations.
 
 | Metric | LAC, alpha = 0.1 | Naive, tau = 0.5 |
 |:-------|----------------:|----------------:|
@@ -64,127 +59,81 @@ split, not calculated by pooling repeated test observations.
 | Automation rate | 53.49% (52.31–55.19%) | 24.49% (24.03–24.81%) |
 | Error among automated cases | 5.51% (5.04–5.77%) | 1.33% (1.06–1.71%) |
 
-At these settings LAC handles more requests, with more error among the handled
-cases. They are different operating points, not a matched-automation comparison
-or evidence that one method is generally better. Neither setting is recommended
-as a deployment threshold.
+LAC handles more requests here, but with more error among those handled. These
+are different operating points, not a matched-automation comparison or a
+deployment recommendation.
 
-## Reading the four figures
+## What changes as the rule becomes stricter?
 
 ### 1. Nominal versus empirical coverage
 
 ![LAC nominal versus empirical coverage for five splits, with pointwise 95% Wilson intervals](figures/banking77/nominal_vs_empirical_coverage.png)
 
-The horizontal axis is the target coverage `1 - alpha`. The vertical axis is
-the fraction of all test examples whose prediction set contains the true intent.
-Each colored line represents one split. The dashed diagonal indicates agreement
-between nominal and measured coverage; the vertical bars are per-split 95%
-Wilson intervals.
-
-Coverage follows the target across the grid. At the 90% target, all five
-per-split intervals contain 90%. This is evidence of agreement at this operating
-point, not proof of exchangeability or a requirement that every interval at every
-grid point contain its target. The uncertainty limitations are discussed below.
+The horizontal axis is target coverage, `1 - alpha`; the vertical axis is the
+fraction of requests whose set contains the true intent. Each line is one split;
+the diagonal marks agreement and the bars are pointwise 95% Wilson intervals.
+Coverage follows the target across the grid. All five intervals contain 90%
+at that target, supporting measured agreement without proving that calibration
+and test requests follow the same distribution.
 
 ### 2. Coverage versus average set size
 
 ![Empirical coverage versus average LAC prediction-set size for five splits](figures/banking77/coverage_vs_set_size.png)
 
-The horizontal axis is the average number of labels in a prediction set; the
-vertical axis is coverage. Each line again represents one split, with one point
-per alpha.
-
-Higher coverage requires larger sets in this experiment. Across splits, average
-set size is 8.510 at the 99% target, 2.455 at the 95% target, and 1.568 at the 90%
-target. The additional labels help retain the true intent, but multi-label sets
-are deferred by the singleton policy. Smaller average sets alone do not establish
-a better automation policy: empty sets also reduce the average and are deferred.
+Mean set size is on the horizontal axis and coverage on the vertical axis,
+with one point per alpha on each split's line. Mean size rises from 1.568 at
+the 90% target to 2.455 at 95% and 8.510 at 99%. More labels help retain the correct intent,
+but multi-label sets require review. Smaller average sets are not sufficient
+either: empty sets reduce the average while also requiring review.
 
 ### 3. Automation versus error
 
 ![Automation rate versus error on automated cases for LAC and naive thresholding, highlighting LAC alpha 0.3 in red across five splits](figures/banking77/automation_vs_error.png)
 
-The horizontal axis is the fraction of all requests automated. The vertical
-axis is the fraction of those automated predictions that are incorrect. For
-example, a point at `(0.60, 0.05)` would mean 600 automated requests per 1,000,
-including 30 incorrect decisions, with the remaining 400 deferred.
+Automation is horizontal; error among automated requests is vertical. For example,
+`(0.60, 0.05)` means 600 automated requests per 1,000, including 30 mistakes.
+Blue paths are LAC; orange paths are naive; each method has five split traces,
+not confidence bands. Red circles mark LAC `alpha=0.3`.
 
-- Blue solid lines with circles represent LAC; each point uses a different alpha.
-- Red circles labeled "best trade off" mark `alpha=0.3` on each LAC trace, not a
-  separate method.
-- Orange dashed lines with squares represent naive thresholding; each point uses
-  a different confidence cutoff.
-- There are five traces per method, one per split. Overlapping traces are not
-  confidence bands. Error intervals are retained in the CSVs, not drawn here.
-
-The points are connected in increasing policy-parameter order, not sorted by
-automation rate. Raising the naive cutoff can only reduce automation. LAC can
-turn back because increasing alpha shrinks sets: a request can move from a
-multi-label set (defer), to a singleton (automate), to an empty set (defer).
-For example, mean LAC automation is 68.25% at `alpha=0.2` but 51.53% at
-`alpha=0.5`; mean empty-set rate rises from 15.19% to 47.63%.
-
-The curves show observed operating points, not a smooth optimal frontier. LAC
-does not uniformly dominate naive thresholding. At `alpha=0.01`, LAC makes no
-observed automated errors in any split, but automates only 6.03% of cases on
-average. Each run selects only 170–207 cases, with a positive 95% error-interval
-upper bound of approximately 1.82–2.21%. Zero observed error is not zero risk.
-Points with no automated cases have undefined error (`nan`) and are omitted.
+Paths follow tested parameter order, not an interpolated optimal frontier.
+Raising the naive cutoff reduces automation. LAC can turn back: shrinking a
+multi-label set can produce a singleton, then an empty set. At the strict 99%
+target, LAC automates only 6.03% with no observed errors, based on just 170–207
+selected requests per run. Zero observed error is not zero risk. Settings with
+no automated requests have undefined error and are omitted.
 
 #### Where LAC is favorable
 
-The clearest local advantage is around **65–68% automation**: the red LAC
-`alpha=0.3` points sit below and to the right of the evaluated naive `tau=0.2`
-points. LAC handles more requests while making fewer errors as a fraction of
-the automated cases.
-
-As above, values are per-split means with minimum–maximum ranges, not confidence
-intervals or pooled test estimates.
+The clearest local advantage is around **65–68% automation**, comparing the
+actual tested LAC `alpha=0.3` and naive `tau=0.2` settings:
 
 | Evaluated setting | Automation rate | Error among automated cases |
 |:------------------|----------------:|----------------------------:|
 | LAC, alpha = 0.3 (red) | 68.08% (67.73–68.44%) | 5.18% (4.93–5.51%) |
 | Naive, tau = 0.2 | 65.06% (64.64–65.29%) | 6.46% (6.36–6.58%) |
 
-The mean difference is **3.02 percentage points more automation and 1.28
-percentage points less automated-case error**. Both improvements hold in each
-of the five paired splits. This compares actual evaluated points; it does not
-interpolate between naive cutoffs, establish a continuous winning region, or
-demonstrate statistical significance. The same test requests are reused across
-splits, so these are not five independent confirmation studies.
+LAC handles **3.02 percentage points more requests with 1.28 percentage points
+less automated-case error**. Both improvements hold in every split, but do not
+establish a general winner or statistical significance.
 
-Why highlight `alpha=0.3`? It retains almost all the automation of `alpha=0.2`
-(68.08% versus 68.25%), with lower observed error (5.18% versus 5.91%). It is an
-informative high-automation trade-off in the tested grid, not a uniquely optimal
-alpha. A stricter naive cutoff can yield lower error at lower automation; for
-example, `tau=0.5` gives 1.33% error with 24.49% automation.
+The 70% target retains almost all the automation of the 80% target (68.08%
+versus 68.25%), with lower error (5.18% versus 5.91%). A stricter naive cutoff
+can instead reduce error at the cost of automation, as the reference table shows.
 
-There is also a coverage trade-off: `alpha=0.3` targets **70% marginal set
-coverage**, with 70.86% observed on average, rather than the 90% reference target.
-Its 5.18% automated-case error is an empirical result, not a conformal guarantee.
-If 90% set coverage is required, the red setting is not an eligible alternative.
-
-The highlight was chosen after inspecting test results, solely to explain the
-plot. Selecting a deployment policy would require an explicit error budget,
-automation objective and coverage requirement, with selection on separate
-validation data rather than this test set. The red points are not a preselected
-winner or evidence that conformal prediction is always better than confidence
-thresholding.
+The red setting targets 70% coverage and achieves 70.86%: it is **not eligible
+if 90% set coverage is required**. Despite its "best trade off" label, the
+highlight was chosen after test inspection. Deployment selection needs an error
+budget, review capacity and separate validation, not a winner chosen from this plot.
 
 ### 4. Prediction-set-size distribution
 
 ![Mean per-split LAC set-size fractions for alpha 0.01, 0.05, 0.1 and 0.3, including empty sets](figures/banking77/set_size_distribution.png)
 
-The horizontal axis counts labels per set. The vertical axis is the arithmetic
-mean of the five per-split fractions at that size. Each curve is one alpha, not
-one split. Size zero means an empty set; size one is the only automated bin.
-
-At `alpha=0.01`, much of the mass is spread over multi-label sets. At `alpha=0.1`,
-53.49% of sets are singletons and 4.72% are empty, on average. At `alpha=0.3`,
-68.08% are singletons and 25.31% are empty. This explains why shrinking sets
-initially increases automation, while further shrinkage can eventually reduce
-it. Fractions are averaged descriptively; repeated test records are not treated
-as additional independent observations.
+The horizontal axis counts labels; the vertical axis is the mean fraction of
+sets at each size. Curves show `alpha=0.01, 0.05, 0.1, 0.3`, not individual
+splits. Only size one is automated. At `alpha=0.1`, 53.49% are singletons and
+4.72% empty; at `alpha=0.3`, these become 68.08% and 25.31%. The growing empty
+bin explains why shrinking sets eventually reduces automation.
 
 ## Intent-level diagnostics
 
@@ -197,127 +146,47 @@ lowest mean intent coverages at `alpha=0.1` are:
 | `card_acceptance` | 60.00% | 55.00–67.50% |
 | `card_swallowed` | 72.50% | 70.00–77.50% |
 
-These are descriptive diagnostics selected after evaluation, not a separate
-confirmation study or a reason to tune thresholds on the test set. Each intent
-has only 40 unique test examples, reused across seeds, not 200 independent
-examples. The full 77-intent results and pointwise intervals are saved in
-`class_coverage.csv`. Marginal coverage does not promise nominal coverage for
-each intent, and this baseline should not be described as uniformly reliable.
+These post-hoc diagnostics reveal an important weakness: nominal marginal
+coverage does not protect every intent. Each intent has only 40 unique test
+examples, not 200 independent observations across seeds. Full results are in
+`class_coverage.csv`; these findings should not be used to tune on the test set.
 
 ## Uncertainty and limitations
 
-Coverage and automated-case error use pointwise 95%
-[Wilson intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm). Coverage
-uses 3,080 test cases per split; automated error uses only the selected cases.
-Intent-level intervals use 40 cases. None is a simultaneous guarantee over all
-seeds, alphas, thresholds or intents. Since the same test set is reused, counts
-are never pooled across seeds to construct intervals.
+Pointwise 95% [Wilson intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm)
+use 3,080 cases for coverage, selected cases for automated error, and 40 for each
+intent. They are not simultaneous guarantees across settings. Repeated test
+observations are never pooled across seeds.
 
 The [official split limitations](../data/README.md#split-limitations) matter:
-training intent counts range from 35 to 187, whereas the test set has exactly
-40 per intent. Calibration follows the training mixture. These fixed splits
-do not establish calibration-to-test exchangeability, so global binomial
-intervals are approximate diagnostics and observed coverage cannot establish
-the conformal theorem's assumptions. Six text values also overlap between the
-official splits after lowercasing and trimming whitespace, although there is
-no exact text overlap. The official records have been preserved unchanged.
+training intent counts range from 35 to 187, but test counts are exactly 40.
+Calibration inherits the unequal training mixture, so exchangeability with
+test data is not established and global intervals are approximate diagnostics.
+Six texts also overlap across official splits after lowercasing and trimming,
+though none overlap exactly. Original records remain unchanged.
 
-Error among automated cases is measured empirically. No acceptable operational
-error budget, human-review capacity or intent-specific requirement has been
-specified, and no deployment policy is selected here.
+## Conclusion
 
-## Conclusions and next work
-
-This completes the documented TF-IDF baseline with LAC and naive thresholding:
-coverage tracks its target, coverage and set size change in the expected
-direction with alpha, and aggregate results vary little across the tested
-splits. Singleton selection gives a measurable automation-versus-error trade-off,
-but it has no automatic-error guarantee and weak coverage for some intents.
-
-There is a concrete local advantage: at `alpha=0.3`, LAC achieves higher
-automation and lower automated-case error than naive `tau=0.2` in every tested
-split. This favorable high-automation comparison does not establish overall
-dominance or a best deployment threshold, and uses a lower 70% coverage target.
-
-The next comparisons are a frozen pretrained encoder versus TF-IDF, and APS
-versus LAC on the same data protocol. Neither is assumed to improve the baseline.
-Those comparisons remain outstanding before the LLM phase; this report does not
-mark the broader Phase 1 acceptance gate as complete.
+LAC provides a useful, reproducible automation trade-off, including a local
+advantage over naive `tau=0.2`. It neither guarantees automated-case error nor
+resolves weak intent coverage. The later score comparison changes how prediction
+sets are built; a frozen-encoder comparison remains ahead of the LLM phase. This baseline
+alone does not complete the broader acceptance gate.
 
 ## Reproduce the report
 
-The code snapshot for the numerical results is commit `3ed6f5f`. The red
-`alpha=0.3` highlight was added later using the same saved metrics; it does not
-change the evaluation or its grids. Recorded library versions are NumPy `2.4.6`,
-scikit-learn `1.9.0` and Matplotlib `3.11.1`.
-
-From the repository root, use Python 3.12, follow the pinned
-[data download instructions](../data/README.md#download), then run:
+Numerical results come from commit `3ed6f5f`, using NumPy `2.4.6`, scikit-learn
+`1.9.0` and Matplotlib `3.11.1`; the red highlight was added later without changing
+the data. With Python 3.12 and the [pinned data](../data/README.md#download), run
+from the repository root:
 
 ```bash
 python -m pip install -e ".[example]"
 python examples/banking77_validation.py
 ```
 
-### Single-split walkthrough
-
-For the shorter end-to-end example, run:
-
-```bash
-python examples/banking77_baseline.py
-```
-
-It uses seed `42`, `alpha=0.1` and `tau=0.5`, with classifier accuracy `0.841`.
-The rounded results are:
-
-| Policy | Set coverage | Average set size | Automation rate | Automated-case error |
-|:-------|-------------:|-----------------:|----------------:|---------------------:|
-| LAC singleton | 0.895 | 1.524 | 0.547 | 0.054 |
-| Naive threshold | Not applicable | Not applicable | 0.240 | 0.015 |
-
-Seed 42 is one of the five splits summarized above, not an additional independent
-test set. This walkthrough makes each step visible but cannot establish stability
-on its own.
-
-The data loader and classifier can also be used directly:
-
-```python
-from conformal_selective_prediction.data import load_banking77
-from conformal_selective_prediction.models import fit_tfidf_classifier
-
-data = load_banking77("data/raw/banking77", random_seed=42)
-model = fit_tfidf_classifier(data.train)
-
-calibration_probabilities = model.predict_proba(data.calibration.texts)
-test_probabilities = model.predict_proba(data.test.texts)
-```
-
-Prediction transforms held-out texts without refitting the vectorizer or
-classifier. Probability column `j` corresponds to `model.classes_[j]`. With all
-77 intents in training, these are indices `0` through `76` from `data.class_names`;
-no second label encoding is introduced.
-
-### Validation outputs and report snapshots
-
-The validation script writes the following files to Git-ignored `outputs/banking77/`.
-Rerunning replaces the same-named files in that directory.
-
-| File | Contents |
-|:-----|:---------|
-| `config.json` | Seeds, grids, confidence level and library versions |
-| `lac_metrics.csv` | Per-split LAC coverage, set size and selection metrics, with counts and intervals |
-| `naive_metrics.csv` | Per-split naive selection metrics, with counts and intervals |
-| `class_coverage.csv` | Coverage and counts for each intent, split and alpha |
-| `set_sizes.csv` | Set-size counts and fractions, including empty sets |
-| Four `.png` files | The figures shown above |
-
-The copies in `docs/figures/banking77/` are versioned report snapshots; running
-the experiment does not overwrite them. After reviewing a new run, update the
-reported numbers and refresh the four copies together:
-
-```bash
-for filename in nominal_vs_empirical_coverage.png coverage_vs_set_size.png \
-    automation_vs_error.png set_size_distribution.png; do
-    cp "outputs/banking77/$filename" "docs/figures/banking77/$filename"
-done
-```
+The shorter `python examples/banking77_baseline.py` walkthrough uses seed 42,
+already included here. Validation replaces generated files in
+`outputs/banking77/`, but not the four reviewed snapshots in
+`docs/figures/banking77/`. Update snapshots and reported numbers together only
+after reviewing a new run.

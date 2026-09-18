@@ -117,6 +117,9 @@ The example prints the coverage target, the central SOCOP regularization and all
 five configurations' metrics, and downloads no data. The results above were
 reproduced with NumPy `2.4.6` and scikit-learn `1.9.0`.
 
-Next, we will compare APS and SOCOP with the [BANKING77 baseline](banking77_validation.md),
-keeping its classifier and data splits fixed. The relative performance observed
-here may not carry over to real requests.
+The completed [BANKING77 score comparison](banking77/score_comparison/comparison.md)
+takes these methods from generated data to real support requests. It keeps the
+banking baseline's classifier and training/test partitions, but subdivides the
+original calibration pool into separate tuning and final-calibration records.
+The banking results show which of the patterns observed here carry over to
+real requests.
