@@ -6,11 +6,13 @@ from .metrics import (
     binomial_confidence_interval,
     empirical_coverage,
 )
-from .prediction_sets import lac_prediction_sets
-from .scores import lac_scores
+from .prediction_sets import aps_prediction_sets, lac_prediction_sets, socop_prediction_sets
+from .scores import aps_scores, lac_scores, socop_scores
 from .selection import singleton_mask
 
 __all__ = [
+    "aps_prediction_sets",
+    "aps_scores",
     "automated_error_rate",
     "automation_rate",
     "average_set_size",
@@ -20,4 +22,6 @@ __all__ = [
     "lac_prediction_sets",
     "lac_scores",
     "singleton_mask",
+    "socop_prediction_sets",
+    "socop_scores",
 ]

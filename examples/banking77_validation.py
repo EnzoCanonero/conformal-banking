@@ -30,6 +30,7 @@ OUTPUT_DIRECTORY = Path("outputs/banking77")
 RANDOM_SEEDS = (7, 21, 42, 84, 123)
 MIS_COVERAGE_RATES = (0.01, 0.05, 0.10, 0.15, 0.20, 0.30, 0.50)
 SET_SIZE_PLOT_ALPHAS = (0.01, 0.05, 0.10, 0.30)
+HIGHLIGHTED_ALPHA = 0.30
 CONFIDENCE_THRESHOLDS = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
 CONFIDENCE_LEVEL = 0.95
 
@@ -296,6 +297,22 @@ def save_automation_figure(results: ValidationResults, output_path: Path) -> Non
                 alpha=0.6,
                 label=label,
             )
+
+    # Highlight an observed trade-off, not an automatically selected best alpha.
+    highlighted_rows = [
+        row for row in results.lac if row["alpha"] == HIGHLIGHTED_ALPHA
+    ]
+    highlighted_automation = [row["automation_rate"] for row in highlighted_rows]
+    highlighted_errors = [row["automated_error_rate"] for row in highlighted_rows]
+    axis.scatter(
+        highlighted_automation,
+        highlighted_errors,
+        color="tab:red",
+        edgecolors="white",
+        s=70,
+        zorder=3,
+        label=f"LAC alpha={HIGHLIGHTED_ALPHA:g} (best trade off)",
+    )
 
     axis.set_xlim(0.0, 1.0)
     axis.set_ylim(bottom=0.0)
