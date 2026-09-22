@@ -1,8 +1,9 @@
 # Frozen encoder preparation
 
-This is the first part of the TF-IDF versus frozen-encoder study. It computes
-and caches text vectors only: classifier training and LAC/SOCOP evaluation
-will follow separately.
+This prepares the TF-IDF versus frozen-encoder study. It caches text vectors,
+then trains logistic regression on them using the same requests and settings
+as the existing TF-IDF models. The saved probabilities will support the later
+LAC/SOCOP comparison; this step does not evaluate routing or compare performance.
 
 - **Encoder:** [`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/blob/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md),
   fixed to revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`. This compact
@@ -54,3 +55,45 @@ Raw texts and labels are not saved. A mismatched input or configuration raises
 an error rather than overwriting an existing cache; use a different path when
 preparing different inputs. Library versions describe the environment that
 created the vectors; loading a cache does not recompute them after an upgrade.
+
+## Prepare BANKING77 predictions
+
+Keep the local BANKING77 files and the completed TF-IDF preparation available:
+`outputs/banking77/score_comparison/prepared/` must contain its manifest and
+five seed archives. Then run from the repository root:
+
+```bash
+python -m examples.banking77_representations.prepare
+```
+
+- **A paired comparison:** the saved TF-IDF sample IDs determine which requests
+  train each encoder-based classifier and which belong to tuning, calibration
+  and test. The preparation checks the dataset, labels and separation of these
+  partitions before fitting. It preserves all 3,080 official test requests and
+  the same five seeds, with 7,502 training requests, two tuning halves of 625
+  and 1,251 final-calibration requests per seed.
+- **Only the representation changes:** each classifier uses the TF-IDF
+  manifest's logistic-regression settings: `C=1`, `l1_ratio=0`, `solver="lbfgs"`
+  and `max_iter=1000`. The encoder remains frozen. The existing TF-IDF models
+  are not retrained, and their artifacts are neither copied nor overwritten.
+- **Embeddings are computed once:** a stable ordering of the original sample
+  IDs lets all five splits share one cache. Probabilities are then saved for
+  each tuning half, final calibration and test, preserving the original class
+  order. Elapsed encoding-call time is recorded for the later report; it includes
+  model loading and, if needed, downloading, not just inference.
+
+New files are saved under
+`outputs/banking77/representation_comparison/encoder/`:
+
+```text
+embeddings.npz
+prepared/
+├── manifest.json
+└── seed_*.npz
+```
+
+The encoder preparation has its own identity and records the source TF-IDF
+directory, preparation ID and manifest hash. Keep that source unchanged for
+the paired study: regenerating it invalidates the recorded pairing. The two
+representations deliberately have different preparation IDs; they are paired
+through their data and split IDs, not by treating them as the same model run.

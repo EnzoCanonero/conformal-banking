@@ -4,6 +4,7 @@ from dataclasses import asdict
 from hashlib import sha256
 from importlib.metadata import version
 from pathlib import Path
+from time import perf_counter
 
 import numpy as np
 from numpy.typing import NDArray
@@ -44,7 +45,9 @@ def load_or_encode_embeddings(
             embeddings: NDArray[np.float32] = archive["embeddings"]
             return embeddings
 
+    start_time = perf_counter()
     embeddings = encode_texts(texts)
+    encoding_seconds = perf_counter() - start_time
     packages = ("numpy", "sentence-transformers", "transformers", "torch", "tokenizers")
     package_versions = {}
     for package in packages:
@@ -54,6 +57,7 @@ def load_or_encode_embeddings(
         "input_sha256": input_hash,
         "encoder": encoder_settings,
         "package_versions": package_versions,
+        "encoding_seconds": encoding_seconds,
     }
     serialized_metadata = json.dumps(metadata, sort_keys=True)
 
