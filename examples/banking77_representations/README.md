@@ -1,9 +1,9 @@
-# Frozen encoder preparation
+# Frozen encoder comparison
 
-This prepares the TF-IDF versus frozen-encoder study. It caches text vectors,
-then trains logistic regression on them using the same requests and settings
-as the existing TF-IDF models. The saved probabilities will support the later
-LAC/SOCOP comparison; this step does not evaluate routing or compare performance.
+This study compares TF-IDF with a frozen text encoder, using logistic regression
+with the same requests and settings. Preparation caches text vectors and model
+probabilities; separate LAC and SOCOP commands then evaluate routing. The joint
+comparison, figures and report will follow separately.
 
 - **Encoder:** [`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/blob/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md),
   fixed to revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`. This compact
@@ -97,3 +97,31 @@ directory, preparation ID and manifest hash. Keep that source unchanged for
 the paired study: regenerating it invalidates the recorded pairing. The two
 representations deliberately have different preparation IDs; they are paired
 through their data and split IDs, not by treating them as the same model run.
+
+## Evaluate LAC and SOCOP
+
+After preparation, run the methods independently from the repository root:
+
+```bash
+python -m examples.banking77_representations.lac
+python -m examples.banking77_representations.socop
+```
+
+- **Reuse prepared predictions:** these commands perform no encoding or
+  classifier fitting. They also require the existing `score_comparison/lac/`
+  and `score_comparison/socop/` results, respectively. Compatible TF-IDF results
+  are validated and referenced with file hashes, never recomputed or copied.
+- **Calibrate each representation separately:** LAC uses its final-calibration
+  predictions. SOCOP selects lambda for each seed and coverage target using
+  the two tuning halves, swapping their calibration and selection roles. It
+  then calibrates the selected score on the independent final-calibration data.
+- **Measure routing and coverage separately:** only one-label sets trigger
+  automation; empty or multi-label sets defer to review. Coverage measures how
+  often sets contain the correct intent, not the error rate among automated
+  decisions. No APS, naive-threshold or fixed-lambda SOCOP study is repeated.
+
+Encoder results go to `encoder/lac/` and `encoder/socop/` under the same output
+root. Each contains `metrics.csv`, `class_coverage.csv`, `set_sizes.csv` and
+`manifest.json`; SOCOP also saves `tuning_candidates.csv` and
+`tuning_choices.csv`. These are the inputs for the later comparison, not a
+new report or set of figures.

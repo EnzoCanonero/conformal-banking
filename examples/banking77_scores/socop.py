@@ -79,15 +79,19 @@ def _evaluate_method(
     return metrics, class_coverage, set_sizes
 
 
-# Tune on held-out training data, then evaluate fixed and tuned SOCOP separately.
-def run_experiment(prepared_directory: Path, output_directory: Path) -> None:
+# Tune SOCOP on held-out data, optionally evaluating fixed SOCOP and the naive rule.
+def run_experiment(
+    prepared_directory: Path,
+    output_directory: Path,
+    *,
+    include_naive: bool = True,
+    include_fixed: bool = True,
+) -> None:
     manifest = load_manifest(prepared_directory)
     preparation_id = manifest["preparation_id"]
     confidence_level = manifest["confidence_level"]
     alphas = manifest["alphas"]
     candidate_regularizations = manifest["socop_regularizations"]
-    reference_regularization = manifest["socop_reference_regularization"]
-    confidence_thresholds = manifest["confidence_thresholds"]
 
     metrics: list[dict[str, str | float]] = []
     naive_results: list[dict[str, str | float]] = []
@@ -108,9 +112,7 @@ def run_experiment(prepared_directory: Path, output_directory: Path) -> None:
             tuning_row.update(candidate_row)
             tuning_candidates.append(tuning_row)
 
-        fixed_regularizations = {}
         for alpha in alphas:
-            fixed_regularizations[alpha] = reference_regularization
             tuning_choices.append(
                 {
                     "seed": random_seed,
@@ -121,10 +123,14 @@ def run_experiment(prepared_directory: Path, output_directory: Path) -> None:
             )
 
         # Freeze all per-target choices before evaluating either method on test data.
-        methods = {
-            "socop_fixed": fixed_regularizations,
-            "socop_tuned": selected_regularizations,
-        }
+        methods = {}
+        if include_fixed:
+            reference_regularization = manifest["socop_reference_regularization"]
+            fixed_regularizations = {}
+            for alpha in alphas:
+                fixed_regularizations[alpha] = reference_regularization
+            methods["socop_fixed"] = fixed_regularizations
+        methods["socop_tuned"] = selected_regularizations
         for method, regularizations in methods.items():
             method_metrics, method_class_rows, method_size_rows = _evaluate_method(
                 data, random_seed, method, regularizations, confidence_level
@@ -133,24 +139,32 @@ def run_experiment(prepared_directory: Path, output_directory: Path) -> None:
             class_coverage.extend(method_class_rows)
             set_sizes.extend(method_size_rows)
 
-        naive_rows = naive_metrics(data.test, confidence_thresholds, confidence_level)
-        for naive_row in naive_rows:
-            row: dict[str, str | float] = {"method": "naive", "seed": random_seed}
-            row.update(naive_row)
-            naive_results.append(row)
+        if include_naive:
+            confidence_thresholds = manifest["confidence_thresholds"]
+            naive_rows = naive_metrics(data.test, confidence_thresholds, confidence_level)
+            for naive_row in naive_rows:
+                row: dict[str, str | float] = {"method": "naive", "seed": random_seed}
+                row.update(naive_row)
+                naive_results.append(row)
 
         print(f"Completed SOCOP seed {random_seed}")
 
     output_directory.mkdir(parents=True, exist_ok=True)
     save_csv(output_directory / "metrics.csv", metrics)
-    save_csv(output_directory / "naive_metrics.csv", naive_results)
+    if include_naive:
+        save_csv(output_directory / "naive_metrics.csv", naive_results)
     save_csv(output_directory / "class_coverage.csv", class_coverage)
     save_csv(output_directory / "set_sizes.csv", set_sizes)
     save_csv(output_directory / "tuning_candidates.csv", tuning_candidates)
     save_csv(output_directory / "tuning_choices.csv", tuning_choices)
 
     result_manifest = manifest.copy()
-    result_manifest["methods"] = ["socop_fixed", "socop_tuned", "naive"]
+    result_manifest["methods"] = []
+    if include_fixed:
+        result_manifest["methods"].append("socop_fixed")
+    result_manifest["methods"].append("socop_tuned")
+    if include_naive:
+        result_manifest["methods"].append("naive")
     result_manifest["prepared_directory"] = str(prepared_directory)
     result_manifest["evaluation_numpy_version"] = version("numpy")
     result_manifest["socop_score"] = "full positive-regularization, lower convex hull"

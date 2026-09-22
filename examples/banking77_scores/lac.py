@@ -16,13 +16,17 @@ PREPARED_DIRECTORY = Path("outputs/banking77/score_comparison/prepared")
 OUTPUT_DIRECTORY = Path("outputs/banking77/score_comparison/lac")
 
 
-# Evaluate LAC and the naive rule on shared predictions, without fitting a model.
-def run_experiment(prepared_directory: Path, output_directory: Path) -> None:
+# Evaluate LAC, optionally with the naive rule, without fitting a model.
+def run_experiment(
+    prepared_directory: Path,
+    output_directory: Path,
+    *,
+    include_naive: bool = True,
+) -> None:
     manifest = load_manifest(prepared_directory)
     preparation_id = manifest["preparation_id"]
     confidence_level = manifest["confidence_level"]
     alphas = manifest["alphas"]
-    confidence_thresholds = manifest["confidence_thresholds"]
 
     metrics: list[dict[str, str | float]] = []
     naive_results: list[dict[str, str | float]] = []
@@ -71,24 +75,28 @@ def run_experiment(prepared_directory: Path, output_directory: Path) -> None:
                 diagnostic_row.update(size_row)
                 set_sizes.append(diagnostic_row)
 
-        # The baseline uses the same test probabilities, with no conformal threshold.
-        naive_rows = naive_metrics(data.test, confidence_thresholds, confidence_level)
-        for naive_row in naive_rows:
-            row = {"method": "naive", "seed": random_seed}
-            row.update(naive_row)
-            naive_results.append(row)
+        if include_naive:
+            confidence_thresholds = manifest["confidence_thresholds"]
+            naive_rows = naive_metrics(data.test, confidence_thresholds, confidence_level)
+            for naive_row in naive_rows:
+                row = {"method": "naive", "seed": random_seed}
+                row.update(naive_row)
+                naive_results.append(row)
 
         print(f"Completed LAC seed {random_seed}")
 
     output_directory.mkdir(parents=True, exist_ok=True)
     save_csv(output_directory / "metrics.csv", metrics)
-    save_csv(output_directory / "naive_metrics.csv", naive_results)
+    if include_naive:
+        save_csv(output_directory / "naive_metrics.csv", naive_results)
     save_csv(output_directory / "class_coverage.csv", class_coverage)
     save_csv(output_directory / "set_sizes.csv", set_sizes)
 
     # Snapshot the preparation and evaluation settings for the later comparison.
     result_manifest = manifest.copy()
-    result_manifest["methods"] = ["lac", "naive"]
+    result_manifest["methods"] = ["lac"]
+    if include_naive:
+        result_manifest["methods"].append("naive")
     result_manifest["prepared_directory"] = str(prepared_directory)
     result_manifest["evaluation_numpy_version"] = version("numpy")
     save_manifest(output_directory, result_manifest)
