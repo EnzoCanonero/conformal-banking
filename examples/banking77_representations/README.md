@@ -2,8 +2,9 @@
 
 This study compares TF-IDF with a frozen text encoder, using logistic regression
 with the same requests and settings. Preparation caches text vectors and model
-probabilities; separate LAC and SOCOP commands then evaluate routing. The joint
-comparison, figures and report will follow separately.
+probabilities; separate LAC and SOCOP commands then evaluate routing. A final
+comparison reads their saved results and evaluates a simple confidence rule
+on cached encoder predictions to produce summary metrics and figures.
 
 - **Encoder:** [`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/blob/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md),
   fixed to revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`. This compact
@@ -118,10 +119,49 @@ python -m examples.banking77_representations.socop
 - **Measure routing and coverage separately:** only one-label sets trigger
   automation; empty or multi-label sets defer to review. Coverage measures how
   often sets contain the correct intent, not the error rate among automated
-  decisions. No APS, naive-threshold or fixed-lambda SOCOP study is repeated.
+  decisions. These two commands do not evaluate APS, naive thresholds or
+  fixed-lambda SOCOP. The encoder confidence rule is added in the comparison.
 
 Encoder results go to `encoder/lac/` and `encoder/socop/` under the same output
 root. Each contains `metrics.csv`, `class_coverage.csv`, `set_sizes.csv` and
 `manifest.json`; SOCOP also saves `tuning_candidates.csv` and
-`tuning_choices.csv`. These are the inputs for the later comparison, not a
-new report or set of figures.
+`tuning_choices.csv`. These are the inputs for the joint comparison below.
+
+## Compare saved results
+
+With both encoder evaluations and their referenced TF-IDF results available:
+
+```bash
+python -m examples.banking77_representations.compare
+```
+
+- **No model inference, training or recalibration.** The command checks the paired
+  preparations, result grids and recorded TF-IDF hashes before reading the
+  conformal metric tables. It requires the `example` dependencies.
+- **A simple encoder-only reference:** the comparison evaluates naive confidence
+  thresholds on the saved encoder test probabilities, using the existing
+  TF-IDF study's fixed grid from 0 to 1 in steps of 0.1. It neither tunes a
+  cutoff nor changes the prepared data or conformal results. A cutoff accepting
+  no requests has undefined (`NaN`) error and is omitted from the routing plot.
+- **Each representation remains separate.** LAC and tuned SOCOP are compared
+  across representations; the additional policy plot uses only the encoder.
+  Means and minimum/maximum values summarize five per-split metrics;
+  ranges are not confidence intervals, and repeated test counts are not pooled.
+- **Review-set size has its own denominator.** `deferred_set_size` averages the
+  number of intents only over non-singleton sets within each run, including
+  empty sets. It is undefined (`NaN`) if no requests are deferred. This differs
+  from `average_set_size`, which includes every test request.
+
+The command writes `metrics_summary.csv`, `encoder_naive_metrics.csv`,
+`encoder_naive_summary.csv`, `manifest.json` and five figures under
+`outputs/banking77/representation_comparison/comparison/`, replacing only those
+comparison outputs on rerun. The manifest identifies both source preparations,
+the result files used and the encoder archives used for naive routing. Earlier
+experiments and their artifacts stay intact.
+
+The [report](../../docs/banking77/representation_comparison/comparison.md)
+explains the results, with separate LAC and SOCOP images displayed side by side
+for automation/error and coverage, plus one encoder-only policy comparison.
+Its figure snapshots are saved separately in
+`docs/banking77/representation_comparison/figures/`; running the comparison does
+not overwrite the published report or those snapshots.

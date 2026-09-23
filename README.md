@@ -48,10 +48,7 @@ planned LLM will both follow these steps:
 - **A 90% target is a statistical promise, not a fixed result for every run.**
   The guarantee is that the correct answer is retained in at least nine out of
   ten cases on average, assuming calibration and future requests are drawn
-  independently from the same unchanged population. That average includes
-  repeating calibration with new examples. The particular examples used can
-  make one run more or less cautious than another, so a run can fall below 90%
-  even when it receives many requests.
+  independently from the same unchanged population.
 
 - **Keeping the right answer available does not guarantee correct automation.**
   The promise is not about getting nine out of ten automatic decisions right,
@@ -83,7 +80,7 @@ source, setup and limitations.
 | Synthetic validation | Complete | Check the method on generated data under controlled conditions. [Report](docs/synthetic_validation.md). |
 | BANKING77 baseline | Complete | Establish what a simple word-based classifier can automate. [Report](docs/banking77_validation.md). |
 | Score comparison | Implemented | Compare LAC, APS and SOCOP using the same classifier and test requests. [Report](docs/banking77/score_comparison/comparison.md). |
-| Representation comparison | Next | Compare word-based features with a pretrained text encoder, keeping its weights fixed and using the same classifier family and routing rules. |
+| Representation comparison | Implemented | Compare word-based features with a frozen pretrained text encoder, keeping the classifier family and routing rules unchanged. [Report](docs/banking77/representation_comparison/comparison.md). |
 | LLM comparison | Planned | Compare the same routing rule across classifiers and an LLM. |
 | Changing conditions | Planned | Test whether changing instructions or incoming requests requires updating calibration. |
 
@@ -247,6 +244,61 @@ a human reviewer.
 The [full score comparison](docs/banking77/score_comparison/comparison.md)
 explains these exploratory findings, coverage, review-set sizes and limitations.
 
+## From word features to a frozen text encoder
+
+This comparison changes how requests are represented, keeping the same
+five data splits, official test requests, logistic-regression settings and routing
+rules. A pretrained MiniLM encoder converts each request into a numerical vector
+without updating its weights. Replacing word-based TF-IDF features raises mean
+classifier accuracy from **84.01% to 90.14%**.
+
+<p>
+  <img src="docs/banking77/representation_comparison/figures/automation_vs_error_lac.png" width="49%" alt="LAC: automation versus error with TF-IDF and the frozen encoder">
+  <img src="docs/banking77/representation_comparison/figures/automation_vs_error_socop.png" width="49%" alt="Tuned SOCOP: automation versus error with TF-IDF and the frozen encoder">
+</p>
+
+The plots compare TF-IDF in blue with the encoder in orange. Moving right means
+more automation; moving down means fewer errors among automatic decisions.
+Bold curves show five-run means, faint curves individual runs, and points
+represent different coverage targets.
+
+- **LAC benefits substantially:** at the 90% coverage target, automation rises
+  from **52.85% to 86.64%**, with similar error among automated requests
+  (**5.37% versus 5.10%**). The encoder therefore handles substantially more
+  requests without increasing the average error rate at this setting.
+
+- **Tuned SOCOP improves both routing metrics at the highlighted targets:**
+
+  - **95% target:** automation rises from **72.49% to 88.23%**, while error falls
+    from **6.93% to 5.22%**. This is the higher-automation choice.
+  - **99% target:** automation rises from **44.90% to 65.00%**, while error falls
+    from **1.70% to 1.03%**. This sacrifices automation for fewer mistakes.
+    These are five-run averages, not guaranteed error limits.
+
+The curves can turn back as lower coverage targets first produce more singletons,
+then more empty sets that require review. SOCOP also selects its penalty setting
+separately for each target, so improvements need not be uniform across settings.
+
+### How does conformal routing compare with naive confidence?
+
+The next plot keeps the encoder predictions fixed and compares LAC, tuned SOCOP
+and naive confidence, which accepts the top answer above a chosen cutoff.
+
+![Frozen encoder: LAC, tuned SOCOP and naive confidence automation versus error](docs/banking77/representation_comparison/figures/encoder_automation_vs_error.png)
+
+- **Naive confidence is competitive with SOCOP**, with broadly similar
+  automation–error trade-offs when variation across seeds is considered. The
+  curves do not establish a clear overall routing advantage for conformal
+  prediction with this stronger encoder.
+- **The main gain comes from the text representation.** It improves the useful
+  trade-offs for both LAC and SOCOP. Conformal prediction still adds a calibrated
+  coverage target, but that is different from guaranteeing fewer automatic
+  errors; SOCOP can also leave broad sets for human review.
+
+The [representation report](docs/banking77/representation_comparison/comparison.md)
+discusses coverage, review-set sizes and study limitations. These exploratory
+results provide a stronger classifier reference for the planned LLM study.
+
 ## Repository structure
 
 ```text
@@ -255,7 +307,8 @@ examples/
 ├── synthetic_multiclass.py           # Self-contained example
 ├── banking77_baseline.py             # One BANKING77 run, step by step
 ├── banking77_validation.py           # Historical LAC baseline across several runs
-└── banking77_scores/                 # Shared preparation, score studies and comparison
+├── banking77_scores/                 # Shared preparation, score studies and comparison
+└── banking77_representations/        # Frozen encoder and paired representation comparison
 tests/                               # Checks for the mathematics and routing rules
 docs/                                # Reports and saved figures
 data/README.md                       # Dataset setup and limitations
