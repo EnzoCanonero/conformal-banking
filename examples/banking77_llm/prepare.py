@@ -1,19 +1,22 @@
 import argparse
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
-from ._cache import load_scores, save_scores
+from ._cache import restore_scores, save_scores
 from ._data import prepare_requests
 
 
 DATA_DIRECTORY = Path("data/raw/banking77")
-CACHE_PATH = Path("outputs/banking77/llm/prepared/scores.npz")
+STUDY_DIRECTORY = Path("outputs/banking77/llm/full")
+CACHE_PATH = STUDY_DIRECTORY / "prepared/scores.npz"
+REUSE_CACHE_PATH = Path("outputs/banking77/llm/prepared/scores.npz")
 MODEL_ID = "mlx-community/Qwen3-4B-Instruct-2507-4bit"
 MODEL_REVISION = "50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b"
 RANDOM_SEED = 42
-SAMPLE_SIZES = {"tuning_a": 200, "tuning_b": 200, "calibration": 500, "test": 500}
-ESTIMATED_SECONDS_PER_REQUEST = 10.9 * 60 / 80
+SAMPLE_SIZES = {"tuning_a": 625, "tuning_b": 625, "calibration": 1251, "test": 3080}
+ESTIMATED_SECONDS_PER_REQUEST = 8.42
 
 
 # Prepare fixed inputs, then resume scoring without fitting or evaluating any policy.
@@ -21,6 +24,7 @@ def prepare_study(
     data_directory: Path = DATA_DIRECTORY,
     cache_path: Path = CACHE_PATH,
     *,
+    reuse_cache_path: Path | None = REUSE_CACHE_PATH,
     dry_run: bool = False,
 ) -> None:
     requests, class_names = prepare_requests(data_directory, RANDOM_SEED, SAMPLE_SIZES)
@@ -29,7 +33,7 @@ def prepare_study(
         "Choose one of these intents and return only its name:\n"
         + "\n".join(class_names)
     )
-    metadata = {
+    metadata: dict[str, Any] = {
         "model_id": MODEL_ID,
         "model_revision": MODEL_REVISION,
         "instructions": instructions,
@@ -40,7 +44,10 @@ def prepare_study(
         "class_names": class_names,
         "requests": requests,
     }
-    score_rows, token_counts, scoring_seconds = load_scores(cache_path, metadata)
+    metadata, score_rows, token_counts, scoring_seconds = restore_scores(
+        cache_path, metadata, reuse_cache_path
+    )
+    requests = metadata["requests"]
     completed_count = len(score_rows)
     pending_requests = requests[completed_count:]
 
@@ -50,9 +57,17 @@ def prepare_study(
     estimated_hours = len(pending_requests) * seconds_per_request / 3600
 
     print(f"Requests: {SAMPLE_SIZES}")
-    print(f"Cached: {completed_count}/{len(requests)}")
+    print(f"Cached or reusable: {completed_count}/{len(requests)}")
+    print(f"New requests to score: {len(pending_requests)}")
     print(f"Estimated remaining scoring time: {estimated_hours:.1f} hours")
-    if dry_run or not pending_requests:
+    print(f"Output cache: {cache_path}")
+    if dry_run:
+        return
+
+    # Preserve inherited scores before model loading; the source stays untouched.
+    if score_rows and not cache_path.exists():
+        save_scores(cache_path, metadata, score_rows, token_counts, scoring_seconds)
+    if not pending_requests:
         return
 
     # The optional MLX dependencies are not imported for previews or complete caches.

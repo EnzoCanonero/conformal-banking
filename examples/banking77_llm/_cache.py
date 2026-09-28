@@ -33,6 +33,57 @@ def load_scores(
     return list(scores), token_counts, scoring_seconds
 
 
+# Resume the target cache, or reuse matching requests from an earlier preparation.
+def restore_scores(
+    cache_path: Path,
+    metadata: dict[str, Any],
+    reuse_cache_path: Path | None,
+) -> tuple[dict[str, Any], list[NDArray[np.float64]], NDArray[np.int64], float]:
+    source_path = cache_path if cache_path.exists() else reuse_cache_path
+    if source_path is None or not source_path.exists():
+        return metadata, [], np.empty(0, dtype=np.int64), 0.0
+
+    with np.load(source_path, allow_pickle=False) as archive:
+        saved_metadata = json.loads(str(archive["metadata"].item()))
+
+    # Only the sample plan may change when extending an existing preparation.
+    plan_fields = ("requests", "sample_sizes")
+    current_settings = {
+        key: value for key, value in metadata.items() if key not in plan_fields
+    }
+    saved_settings = {
+        key: value for key, value in saved_metadata.items() if key not in plan_fields
+    }
+    if current_settings != saved_settings:
+        raise ValueError("cached model, prompt or scoring settings do not match")
+
+    scores, token_counts, scoring_seconds = load_scores(source_path, saved_metadata)
+    if not np.all(np.isfinite(scores)):
+        raise ValueError("cached scores must be finite before reuse")
+
+    requested_by_id = {row["sample_id"]: row for row in metadata["requests"]}
+    completed_requests = saved_metadata["requests"][: len(scores)]
+    completed_ids = {row["sample_id"] for row in completed_requests}
+    if len(completed_ids) != len(completed_requests):
+        raise ValueError("cached requests must have unique IDs")
+    for request in completed_requests:
+        if requested_by_id.get(request["sample_id"]) != request:
+            raise ValueError("cached request text, label or partition does not match")
+
+    # Keep completed rows first: checkpoint row i still belongs to request i.
+    pending_requests = []
+    for request in metadata["requests"]:
+        if request["sample_id"] not in completed_ids:
+            pending_requests.append(request)
+    metadata = metadata.copy()
+    metadata["requests"] = completed_requests + pending_requests
+
+    if source_path == cache_path and metadata != saved_metadata:
+        raise ValueError("target cache plan changed; use a new output path")
+
+    return metadata, scores, token_counts, scoring_seconds
+
+
 # Replace the archive only after the new checkpoint has been completely written.
 def save_scores(
     cache_path: Path,
