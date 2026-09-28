@@ -159,9 +159,9 @@ comparison outputs on rerun. The manifest identifies both source preparations,
 the result files used and the encoder archives used for naive routing. Earlier
 experiments and their artifacts stay intact.
 
-The [report](../../docs/banking77/representation_comparison/comparison.md)
+The [report](../../docs/banking77/representations/tfidf_vs_encoder.md)
 explains the results, with separate LAC and SOCOP images displayed side by side
 for automation/error and coverage, plus one encoder-only policy comparison.
 Its figure snapshots are saved separately in
-`docs/banking77/representation_comparison/figures/`; running the comparison does
+`docs/banking77/representations/figures/`; running the comparison does
 not overwrite the published report or those snapshots.

@@ -4,8 +4,12 @@ This example turns the notebook's Qwen scoring procedure into a small, resumable
 preparation step. It scores all 77 intents for each request and saves the raw
 results. Separate scripts then evaluate LAC, naive confidence and tuned SOCOP
 using that cache, without loading the LLM again. A comparison script evaluates
-the same rules on saved TF-IDF and frozen-encoder predictions. The results
-report is the next step.
+the same rules on saved TF-IDF and frozen-encoder predictions.
+
+- [Qwen study](../../docs/banking77/llm/qwen.md): routing trade-offs, coverage
+  and review burden for the LLM on its own.
+- [Classifier comparison](../../docs/banking77/llm/qwen_vs_classifiers.md): Qwen against
+  TF-IDF and the frozen encoder on matched requests.
 
 ## Fixed setup
 
@@ -77,13 +81,13 @@ sleep while the command runs; keep the laptop lid open:
 caffeinate -i python -m examples.banking77_llm.prepare
 ```
 
-The completed **1,400-request** run is reused, leaving **4,181 new requests**.
-Its measured rate, about **8.42 seconds per request** on the M1 with 16 GB,
-projects **9 hours 47 minutes** of additional scoring. Budget **10–12 hours**
-with no other model running: checkpoint writes, request lengths and machine
-load affect wall time. Without the original cache, scoring all 5,581 requests
-would take roughly 13 hours at that rate. Model files use the existing Hugging
-Face cache, with a download only if the pinned revision is missing.
+The full run is complete: **5,581 requests** recorded **12 hours 47 minutes**
+of scoring on the M1 with 16 GB. Reusing the original 1,400 requests left 4,181
+new ones, which took **9 hours 31 minutes**. Rerunning with the complete cache
+does not load the model. For a fresh preparation, allow roughly 13 hours of
+scoring plus model loading and checkpoint I/O; request lengths and machine
+load affect wall time. Model files use the existing Hugging Face cache, with a
+download only if the pinned revision is missing.
 
 ## Saved scores and resuming
 
@@ -218,10 +222,12 @@ and score caches untouched:
 - `tuning_candidates.csv`: SOCOP's A/B tuning results for each model and target.
 - `manifest.json`: source hashes, model settings and the common evaluation grid.
 - `figures/`: separate LAC and SOCOP model-comparison plots with matching axes,
-  plus a Qwen-only plot comparing LAC, SOCOP and naive confidence.
+  plus Qwen-only plots of automation/error, coverage against its target, and
+  mean set size against observed coverage. Coverage error bars are the saved
+  pointwise 95% Wilson intervals; mean set sizes include all test requests.
 
-The horizontal axis measures automation; the vertical axis measures errors
-among automated requests. Points follow the evaluated parameter order, so
-curves can turn back when prediction sets become empty. Lines connect tested
+In routing plots, the horizontal axis measures automation; the vertical axis
+measures errors among automated requests. Points follow the evaluated parameter
+order, so curves can turn back when prediction sets become empty. Lines connect tested
 settings; they are not fitted frontiers or confidence bands. Zero-automation
 settings have undefined error and are omitted from the plots.

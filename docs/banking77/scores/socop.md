@@ -1,5 +1,7 @@
 # BANKING77: singleton-oriented SOCOP
 
+[All reports](../../README.md)
+
 Two SOCOP settings are worth carrying forward. At the **95% coverage target**,
 tuned SOCOP automates **72.49%** of requests with **6.93% mean error among
 automated cases**. At **99%**, it automates **44.90%** with **1.70% mean error**.
@@ -7,7 +9,7 @@ The first handles more work; the second makes fewer mistakes among the requests
 it handles. Neither maximizes automation, which would admit much of the original
 classifier's error.
 
-See the [shared comparison](comparison.md) for the common data protocol,
+See the [shared comparison](lac_aps_socop.md) for the common data protocol,
 uncertainty limitations and reproduction commands.
 
 ## Fixed reference and tuning-selected configurations
@@ -123,7 +125,7 @@ or proof that an untested naive cutoff could not compete.
 ## Coverage: close to target, but not uniform protection
 
 Both SOCOP variants track the coverage targets closely in the
-[coverage figure](comparison.md#prediction-set-coverage). At the 99% target, fixed
+[coverage figure](lac_aps_socop.md#prediction-set-coverage). At the 99% target, fixed
 and tuned SOCOP reach 98.98% and 99.02% mean coverage respectively. Tuned SOCOP
 reaches 94.93% at the 95% target, 90.19% at 90%, and 70.55% at 70%.
 The routing curves turn back even while coverage continues to follow the target:
@@ -138,7 +140,7 @@ automated subset as its denominator.
 The aggregate also hides a serious weakness. At the 90% target, tuned SOCOP's
 coverage for `virtual_card_not_working` averages only **30.5%**, versus 90.19%
 overall. The shared test records and unequal calibration/test intent mixtures
-further limit the conclusion; the [joint report](comparison.md#what-these-results-do-not-establish)
+further limit the conclusion; the [joint report](lac_aps_socop.md#what-these-results-do-not-establish)
 explains why measured agreement does not establish a deployment guarantee.
 
 ## Conclusion

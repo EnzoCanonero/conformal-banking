@@ -1,4 +1,6 @@
-# BANKING77: the LAC baseline
+# BANKING77: the TF-IDF and LAC baseline
+
+[All reports](../../README.md)
 
 At the 90% LAC target, the TF-IDF/logistic-regression baseline reaches 90.08%
 mean coverage across five splits. Singleton selection automates 53.49% of
@@ -6,15 +8,15 @@ requests, with 5.51% error among automated cases. Aggregate coverage is stable,
 but intent-level differences prevent describing the policy as uniformly reliable.
 
 This is the historical baseline, with **2,501 calibration examples per run**.
-The later [score comparison](banking77/score_comparison/comparison.md) reserves
+The later [score comparison](../scores/lac_aps_socop.md) reserves
 some of those records for SOCOP tuning and recalibrates all methods on 1,251
 examples. Its fresh LAC results are therefore slightly different; the numbers
 and figures in this report retain the original experiment.
 
 ## Experiment setup
 
-The [validation script](../examples/banking77_validation.py) uses the official
-[BANKING77 files](../data/README.md), pinned to revision
+The [validation script](../../../examples/banking77_validation.py) uses the official
+[BANKING77 files](../../../data/README.md), pinned to revision
 `57ec275d8078af65b7731c2a98be812d844a6d6b`:
 
 - Split the official training data into 7,502 model-training and 2,501 calibration
@@ -24,7 +26,7 @@ The [validation script](../examples/banking77_validation.py) uses the official
 - Use seeds `7, 21, 42, 84, 123` to vary training and calibration partitions.
 - Fit word TF-IDF unigrams and bigrams followed by logistic regression. Both
   preprocessing and classifier fitting use only the training partition; the
-  [script](../examples/banking77_validation.py) records the fixed model settings.
+  [script](../../../examples/banking77_validation.py) records the fixed model settings.
 - Fit once per seed and reuse predictions across policy settings, without
   choosing a deployment threshold from test performance.
 
@@ -45,7 +47,7 @@ before evaluation.
 ## Results at the reference settings
 
 The reference settings, `alpha=0.1` and `tau=0.5`, come from the
-[single-split example](../examples/banking77_baseline.py), not a search for the
+[single-split example](../../../examples/banking77_baseline.py), not a search for the
 best test results. Classifier accuracy averages 84.01% (83.83–84.29%).
 
 Tables report arithmetic means across five splits, with minimum–maximum ranges.
@@ -67,7 +69,7 @@ deployment recommendation.
 
 ### 1. Nominal versus empirical coverage
 
-![LAC nominal versus empirical coverage for five splits, with pointwise 95% Wilson intervals](figures/banking77/nominal_vs_empirical_coverage.png)
+![LAC nominal versus empirical coverage for five splits, with pointwise 95% Wilson intervals](figures/nominal_vs_empirical_coverage.png)
 
 The horizontal axis is target coverage, `1 - alpha`; the vertical axis is the
 fraction of requests whose set contains the true intent. Each line is one split;
@@ -78,7 +80,7 @@ and test requests follow the same distribution.
 
 ### 2. Coverage versus average set size
 
-![Empirical coverage versus average LAC prediction-set size for five splits](figures/banking77/coverage_vs_set_size.png)
+![Empirical coverage versus average LAC prediction-set size for five splits](figures/coverage_vs_set_size.png)
 
 Mean set size is on the horizontal axis and coverage on the vertical axis,
 with one point per alpha on each split's line. Mean size rises from 1.568 at
@@ -88,7 +90,7 @@ either: empty sets reduce the average while also requiring review.
 
 ### 3. Automation versus error
 
-![Automation rate versus error on automated cases for LAC and naive thresholding, highlighting LAC alpha 0.3 in red across five splits](figures/banking77/automation_vs_error.png)
+![Automation rate versus error on automated cases for LAC and naive thresholding, highlighting LAC alpha 0.3 in red across five splits](figures/automation_vs_error.png)
 
 Automation is horizontal; error among automated requests is vertical. For example,
 `(0.60, 0.05)` means 600 automated requests per 1,000, including 30 mistakes.
@@ -127,7 +129,7 @@ budget, review capacity and separate validation, not a winner chosen from this p
 
 ### 4. Prediction-set-size distribution
 
-![Mean per-split LAC set-size fractions for alpha 0.01, 0.05, 0.1 and 0.3, including empty sets](figures/banking77/set_size_distribution.png)
+![Mean per-split LAC set-size fractions for alpha 0.01, 0.05, 0.1 and 0.3, including empty sets](figures/set_size_distribution.png)
 
 The horizontal axis counts labels; the vertical axis is the mean fraction of
 sets at each size. Curves show `alpha=0.01, 0.05, 0.1, 0.3`, not individual
@@ -158,7 +160,7 @@ use 3,080 cases for coverage, selected cases for automated error, and 40 for eac
 intent. They are not simultaneous guarantees across settings. Repeated test
 observations are never pooled across seeds.
 
-The [official split limitations](../data/README.md#split-limitations) matter:
+The [official split limitations](../../../data/README.md#split-limitations) matter:
 training intent counts range from 35 to 187, but test counts are exactly 40.
 Calibration inherits the unequal training mixture, so exchangeability with
 test data is not established and global intervals are approximate diagnostics.
@@ -169,15 +171,16 @@ though none overlap exactly. Original records remain unchanged.
 
 LAC provides a useful, reproducible automation trade-off, including a local
 advantage over naive `tau=0.2`. It neither guarantees automated-case error nor
-resolves weak intent coverage. The later score comparison changes how prediction
-sets are built; a frozen-encoder comparison remains ahead of the LLM phase. This baseline
+resolves weak intent coverage. The later [score comparison](../scores/lac_aps_socop.md)
+changes how prediction sets are built; the [encoder study](../representations/tfidf_vs_encoder.md)
+and [Qwen study](../llm/qwen.md) then change the source of the scores. This baseline
 alone does not complete the broader acceptance gate.
 
 ## Reproduce the report
 
 Numerical results come from commit `3ed6f5f`, using NumPy `2.4.6`, scikit-learn
 `1.9.0` and Matplotlib `3.11.1`; the red highlight was added later without changing
-the data. With Python 3.12 and the [pinned data](../data/README.md#download), run
+the data. With Python 3.12 and the [pinned data](../../../data/README.md#download), run
 from the repository root:
 
 ```bash
@@ -188,5 +191,5 @@ python examples/banking77_validation.py
 The shorter `python examples/banking77_baseline.py` walkthrough uses seed 42,
 already included here. Validation replaces generated files in
 `outputs/banking77/`, but not the four reviewed snapshots in
-`docs/figures/banking77/`. Update snapshots and reported numbers together only
+`docs/banking77/baseline/figures/`. Update snapshots and reported numbers together only
 after reviewing a new run.
