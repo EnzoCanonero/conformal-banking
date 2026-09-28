@@ -1,6 +1,6 @@
-# Conformal Banking: From Classifiers to LLMs
+# LLM ScoreKit
 
-[![Tests](https://github.com/EnzoCanonero/conformal-selective-prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/EnzoCanonero/conformal-selective-prediction/actions/workflows/ci.yml)
+[![Tests](https://github.com/EnzoCanonero/llm-scorekit/actions/workflows/ci.yml/badge.svg)](https://github.com/EnzoCanonero/llm-scorekit/actions/workflows/ci.yml)
 
 This project uses **conformal prediction** to decide when a classifier or large
 language model (LLM) should handle a request automatically and when it should

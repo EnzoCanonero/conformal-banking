@@ -1,6 +1,6 @@
 # Defines the package, dependencies, and build settings.
 [project]
-name = "conformal-selective-prediction"
+name = "llm-scorekit"
 version = "0.1.0"
 description = "Conformal prediction sets for reliable multiclass automation and abstention."
 readme = "README.md"
