@@ -62,6 +62,93 @@ def _style_axis(axis: Axes, title: str) -> None:
     axis.legend(loc="upper left", frameon=False)
 
 
+# Show Qwen's coverage uncertainty and the set-size cost of retaining more answers.
+def save_qwen_diagnostic_figures(
+    conformal_rows: list[dict[str, str | float]],
+    output_directory: Path,
+) -> None:
+    output_directory.mkdir(parents=True, exist_ok=True)
+    coverage_figure, coverage_axis = plt.subplots(
+        figsize=(7, 5.2), layout="constrained"
+    )
+    size_figure, size_axis = plt.subplots(figsize=(7, 5.2), layout="constrained")
+
+    for method in ("lac", "socop_tuned"):
+        rows = [
+            row
+            for row in conformal_rows
+            if row["model"] == "qwen" and row["method"] == method
+        ]
+        rows = sorted(rows, key=lambda row: float(row["target_coverage"]))
+        targets = [float(row["target_coverage"]) for row in rows]
+        coverage = [float(row["coverage"]) for row in rows]
+        set_sizes = [float(row["average_set_size"]) for row in rows]
+        lower_errors = [
+            float(row["coverage"]) - float(row["coverage_lower"]) for row in rows
+        ]
+        upper_errors = [
+            float(row["coverage_upper"]) - float(row["coverage"]) for row in rows
+        ]
+        label, color, marker = METHOD_STYLES[method]
+        line_style = "-" if method == "lac" else "--"
+
+        # Intervals describe the fixed test sample, not variation across splits.
+        coverage_axis.errorbar(
+            targets,
+            coverage,
+            yerr=[lower_errors, upper_errors],
+            color=color,
+            marker=marker,
+            markerfacecolor="white",
+            markersize=6,
+            linestyle=line_style,
+            linewidth=1.8,
+            elinewidth=1,
+            capsize=3,
+            label=label,
+        )
+        size_axis.plot(
+            coverage,
+            set_sizes,
+            color=color,
+            marker=marker,
+            markerfacecolor="white",
+            markersize=6,
+            linestyle=line_style,
+            linewidth=1.8,
+            label=label,
+        )
+
+    coverage_axis.plot(
+        [0.45, 1.0], [0.45, 1.0], ":", color="0.4", linewidth=1, label="Target"
+    )
+    coverage_axis.set_title("Qwen 4B: prediction-set coverage")
+    coverage_axis.set_xlabel("Target coverage")
+    coverage_axis.set_ylabel("Observed coverage")
+    coverage_axis.set_xlim(0.47, 1.01)
+    coverage_axis.set_ylim(0.47, 1.01)
+    coverage_axis.yaxis.set_major_formatter(PercentFormatter(1.0))
+
+    size_axis.set_title("Qwen 4B: prediction-set size")
+    size_axis.set_xlabel("Observed coverage")
+    size_axis.set_ylabel("Mean prediction-set size")
+    size_axis.set_xlim(0.5, 1.01)
+    size_axis.set_ylim(bottom=0.0)
+
+    for figure, axis, filename in (
+        (coverage_figure, coverage_axis, "qwen_coverage_vs_target.png"),
+        (size_figure, size_axis, "qwen_set_size_vs_coverage.png"),
+    ):
+        axis.xaxis.set_major_formatter(PercentFormatter(1.0))
+        axis.spines["top"].set_visible(False)
+        axis.spines["right"].set_visible(False)
+        axis.grid(alpha=0.18)
+        axis.set_axisbelow(True)
+        axis.legend(loc="upper left", frameon=False)
+        figure.savefig(output_directory / filename, dpi=180)
+        plt.close(figure)
+
+
 # Compare models at seed 42, then compare routing rules on Qwen alone.
 def save_comparison_figures(
     conformal_rows: list[dict[str, str | float]],
@@ -106,3 +193,4 @@ def save_comparison_figures(
     _style_axis(axis, "Qwen 4B")
     figure.savefig(output_directory / "qwen_automation_vs_error.png", dpi=180)
     plt.close(figure)
+    save_qwen_diagnostic_figures(conformal_rows, output_directory)
