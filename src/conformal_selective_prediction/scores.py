@@ -91,8 +91,6 @@ def _socop_ranked_scores(
     regularization: float,
 ) -> NDArray[np.float64]:
     number_of_classes = ranked_probabilities.size
-    cumulative_probabilities = np.zeros(number_of_classes + 1)
-    cumulative_probabilities[1:] = np.cumsum(ranked_probabilities)
 
     # Every label has a size cost; moving beyond a singleton adds another cost.
     set_sizes = np.arange(number_of_classes + 1, dtype=np.float64)
@@ -107,8 +105,9 @@ def _socop_ranked_scores(
             first = hull_vertices[-2]
             second = hull_vertices[-1]
 
-            previous_mass = cumulative_probabilities[second] - cumulative_probabilities[first]
-            next_mass = cumulative_probabilities[set_size] - cumulative_probabilities[second]
+            # Direct sums retain tiny LLM weights lost by subtracting cumulative masses.
+            previous_mass = np.sum(ranked_probabilities[first:second])
+            next_mass = np.sum(ranked_probabilities[second:set_size])
             previous_cost = set_costs[second] - set_costs[first]
             next_cost = set_costs[set_size] - set_costs[second]
 
@@ -124,7 +123,7 @@ def _socop_ranked_scores(
 
     # Labels on the same hull segment enter together and receive the same score.
     for start, end in zip(hull_vertices, hull_vertices[1:]):
-        probability_gain = cumulative_probabilities[end] - cumulative_probabilities[start]
+        probability_gain = np.sum(ranked_probabilities[start:end])
         cost_increase = set_costs[end] - set_costs[start]
         entry_score = cost_increase / probability_gain
         ranked_scores[start:end] = entry_score

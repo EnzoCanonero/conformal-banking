@@ -1,5 +1,7 @@
 # Synthetic multiclass validation
 
+[All reports](../README.md)
+
 This study compares LAC, APS and SOCOP on generated data before taking the
 additional scores into the banking experiment. One experiment shows how the
 three methods change automatic decisions; repeated simulations separately check
@@ -7,7 +9,7 @@ whether coverage behaves as expected.
 
 ## One classifier, three shortlist rules
 
-The [synthetic example](../examples/synthetic_multiclass.py) compares the methods
+The [synthetic example](../../examples/synthetic_multiclass.py) compares the methods
 without changing the classifier:
 
 - **The data and model stay fixed.** Seed `42` generates 8,000 examples with four
@@ -79,7 +81,7 @@ automatic decisions will be wrong.
 
 ## Repeated-simulation check
 
-The [simulation test](../tests/test_conformal.py) runs 30 independently seeded
+The [simulation test](../../tests/test_conformal.py) runs 30 independently seeded
 simulations. Each generates probabilities for three classes and draws the correct
 answers from them, with no classifier training. All three methods receive the same
 1,000 calibration and 5,000 test examples in each simulation.
@@ -117,7 +119,7 @@ The example prints the coverage target, the central SOCOP regularization and all
 five configurations' metrics, and downloads no data. The results above were
 reproduced with NumPy `2.4.6` and scikit-learn `1.9.0`.
 
-The completed [BANKING77 score comparison](banking77/score_comparison/comparison.md)
+The completed [BANKING77 score comparison](../banking77/scores/lac_aps_socop.md)
 takes these methods from generated data to real support requests. It keeps the
 banking baseline's classifier and training/test partitions, but subdivides the
 original calibration pool into separate tuning and final-calibration records.

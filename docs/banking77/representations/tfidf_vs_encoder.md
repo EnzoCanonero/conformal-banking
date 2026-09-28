@@ -1,5 +1,7 @@
 # BANKING77: does a frozen text encoder improve routing?
 
+[All reports](../../README.md)
+
 **The encoder improves the useful routing trade-offs in this study.** Replacing
 TF-IDF raises classifier accuracy from 84.01% to 90.14%, and the benefit carries
 through to LAC and tuned SOCOP. With this stronger representation, naive
@@ -84,10 +86,20 @@ Here colors identify policies: **blue is LAC, orange is SOCOP and green is
 naive confidence**. Bold curves show five-run means and faint curves show
 individual runs.
 
-**Naive confidence is competitive with SOCOP, with broadly similar routing
-performance.** Considering the variation across seeds, this comparison does
-not show a clear overall automation/error advantage for conformal prediction
-with the stronger text encoder.
+- **Naive confidence is competitive with SOCOP on automation and error.**
+  Considering the variation across seeds, these curves do not show a clear
+  overall routing advantage for conformal prediction with the stronger text
+  encoder. This is an empirical result, not a general claim that the methods
+  converge mathematically.
+- **Conformal prediction still provides a different statistical benefit.**
+  Held-out calibration examples determine prediction sets with a chosen
+  marginal-coverage guarantee: averaged over calibration samples and future
+  requests, the correct intent is retained at least at the target rate. This
+  finite-sample promise holds when calibration and future examples are
+  exchangeable, as with independent draws from the same unchanged population.
+  The fixed naive cutoff used here does not provide that guarantee, even when
+  it makes similar routing decisions. The promise is about prediction sets,
+  not the error rate among automated requests or coverage for each intent.
 
 ## Coverage remains a separate requirement
 
@@ -138,19 +150,24 @@ Arrows again mean TF-IDF → encoder.
    more favorable routing choices and smaller prediction sets, while coverage
    remains close to its target. The main improvement comes from the text
    representation, rather than changing the routing rule alone.
-2. **With the encoder, conformal routing and naive confidence converge towards
-   similar performance.** Naive thresholding is competitive with SOCOP, and
-   the observed curves do not establish a clear overall routing advantage for
-   conformal prediction once seed variation is considered. This conclusion
-   concerns automation and error, not prediction-set coverage, which naive
-   thresholding does not control.
+2. **With the encoder, conformal routing and naive confidence have similar
+   observed automation/error trade-offs.** Naive thresholding is competitive
+   with SOCOP, and the observed curves do not establish a clear overall routing
+   advantage for conformal prediction once seed variation is considered.
+3. **Conformal adds a coverage promise that the fixed naive cutoff does not.**
+   Its calibrated prediction sets retain the correct intent at least at the
+   chosen rate on average, under the exchangeability assumption explained above.
+   This is a separate benefit from routing performance, not a guarantee on errors
+   among automated decisions.
 
 ### Study limitations
 
 - The [official split limitations](../../../data/README.md#split-limitations)
   remain: unequal intent mixtures and text overlaps. Reusing one test set across
   five runs does not create five independent datasets or establish uniform
-  reliability across intents.
+  reliability across intents. Coverage near the target is useful empirical
+  evidence, but does not establish that the guarantee's assumptions hold for
+  this official split.
 - This is exploratory: previous test inspection and lambda-grid expansion
   preceded the encoder study. Pretraining exposure to BANKING77 is unknown.
   Fixed classifier settings do not compare optimally tuned models, and the

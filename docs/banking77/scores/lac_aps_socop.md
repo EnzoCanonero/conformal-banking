@@ -1,5 +1,7 @@
 # BANKING77: which score helps automation?
 
+[All reports](../../README.md)
+
 **The best trade-off depends on the goal:** more automation, fewer routing errors,
 or higher prediction-set coverage. With the same TF-IDF classifier, tuned SOCOP
 stands out for combining high coverage with substantial automation at its 95%
@@ -17,7 +19,7 @@ The [APS](aps.md) and [SOCOP](socop.md) reports explain those behaviors in detai
   training records, 1,250 are reserved for SOCOP tuning in two halves of 625.
   A separate 1,251 records calibrate every conformal method. LAC and APS leave
   the tuning halves unused. The
-  [historical LAC study](../../banking77_validation.md) used 2,501 calibration
+  [historical LAC study](../baseline/tfidf_lac.md) used 2,501 calibration
   records, so its numbers must not be substituted for the fresh LAC controls here.
 - **The same test requests in every run.** Seeds `7, 21, 42, 84, 123` change the
   training/tuning/calibration split, not the 3,080 official test requests.
@@ -268,13 +270,19 @@ whether a deferred set is a useful shortlist or almost the full intent catalogue
   settings. Broad deferred sets and weak intent-level coverage remain costs.
 
 - **Naive confidence remains competitive at several settings.** It should stay
-  in the comparison when evaluating automation and error, while recognizing
-  that it does not supply conformal prediction-set coverage control.
+  in the comparison when evaluating automation and error. Conformal adds a
+  separate statistical benefit: calibration builds prediction sets with a
+  marginal-coverage promise under exchangeability, which the fixed naive cutoff
+  does not provide. Similar routing metrics do not remove that distinction,
+  although set coverage is not an automated-error guarantee. The official
+  split limitations above also mean that coverage near the target is an
+  empirical finding, not proof that the guarantee's assumptions hold here.
 
-The next study should compare a frozen text encoder with TF-IDF before the LLM
-phase, checking whether these routing trade-offs improve when the probabilities
-come from a different representation. The present results do not establish that
-more complex scores alone solve the automation problem.
+The [representation study](../representations/tfidf_vs_encoder.md) follows this
+comparison by replacing TF-IDF with a frozen text encoder, checking whether
+these routing trade-offs improve when the probabilities come from a different
+representation. The present results do not establish that more complex scores
+alone solve the automation problem.
 
 ## Reproduce and inspect
 

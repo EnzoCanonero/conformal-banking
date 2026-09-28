@@ -2,324 +2,209 @@
 
 [![Tests](https://github.com/EnzoCanonero/conformal-selective-prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/EnzoCanonero/conformal-selective-prediction/actions/workflows/ci.yml)
 
-## Conformal prediction for automation: from classifiers to LLMs
+This project uses **conformal prediction** to decide when a classifier or large
+language model (LLM) should handle a request automatically and when it should
+leave the decision to a person. It combines reusable calibration and routing
+functions with BANKING77 studies comparing word-based classifiers, a frozen
+text encoder and a local Qwen model.
 
-When should a model handle a customer request automatically, and when should a
-person take over? This project investigates that question using **conformal
-prediction**, a way to keep several possible answers instead of always forcing
-the model to choose one.
+The emphasis is on what these decisions mean in practice: how much work is
+automated, how often automatic decisions are wrong, and how useful the remaining
+choices are for a reviewer. The experiments distinguish those outcomes from
+conformal's statistical promise of retaining the correct answer in a calibrated
+set of possible answers.
 
-We start with conventional classifiers trained to recognise banking-support
-categories, then move towards **large language models (LLMs)** on the same task.
-We compare how many requests each approach handles automatically and how often
-those decisions are wrong, testing whether conformal prediction helps us decide
-which requests to hand to a person.
+## What's here
+
+- **A reusable decision layer** implements LAC, APS and SOCOP prediction sets,
+  calibration and routing, with metrics for coverage, automation and errors.
+- **Classifier and LLM studies** apply the same decision rules to BANKING77,
+  including local Qwen scoring whose saved results can be reused without
+  repeating inference.
+- **Notebooks, runnable examples and reports** connect the implementation to
+  worked examples and explain the results, their practical costs and limitations.
 
 ### A shared workflow
 
-Consider a customer writing, “The ATM kept my card.” The classifier and the
-planned LLM will both follow these steps:
+For a request such as “The ATM kept my card”:
 
-- **Use known answers to decide how strict the shortlist should be.** A model
-  reporting “80% confidence” is not necessarily right 80% of the time, so we
-  examine its predictions on a separate collection of requests whose correct
-  answers are already known. Those examples show how strongly the model favours
-  the correct categories and let us set a rule for which answers to retain on
-  new requests. This is calibration. A longer shortlist can protect the correct
-  answer while leaving us unable to choose a single category automatically.
+- **Score the possible intents.** Each model ranks the banking-support categories.
+  The classifiers learn from labelled requests; Qwen uses a fixed prompt to
+  score each category name as a possible answer, without task-specific training.
+- **Calibrate a shortlist.** Separate requests with known answers determine
+  which categories to retain for a chosen coverage target. We compare LAC,
+  which checks each category's score separately; APS, which uses cumulative
+  scores in ranked order; and SOCOP, which favours one-answer sets while
+  penalising broad lists.
+- **Route or review.** One retained category means automatic routing. Several
+  categories, or none, mean human review. We compare this with **naive confidence
+  thresholding**: accept the model's top answer above a fixed cutoff, otherwise
+  defer it.
 
-- **Build a shortlist for each new request.** Rather than immediately accepting
-  the model's favourite support category, conformal prediction keeps the
-  categories that meet the rule learned during calibration. This shortlist of
-  possible answers is called a prediction set.
+### Why conformal prediction?
 
-- **Route the request or ask a person to review it.** We route automatically
-  only when the shortlist contains one category. If several answers remain
-  plausible, or none makes the list, a person reviews the request instead.
+**Coverage measures whether the correct answer remains in the prediction set.**
+For the ATM request, keeping both “card retained by an ATM” and “failed cash
+withdrawal” counts as covered when the first is correct, even though a person
+must still choose. Conformal uses separate labelled examples to calibrate which
+answers to retain, rather than treating the model's confidence as a verified
+probability of being right.
 
-### What does the coverage guarantee give us?
+At a 90% target, the guarantee is at least 90% coverage on average, assuming
+calibration and future requests come independently from the same unchanged
+population. This average includes new calibration samples as well as future
+requests, so it is not a promise that every run or batch will meet the target.
 
-- **Coverage asks whether the correct answer is still on the list.** For the
-  ATM request, a list containing both “card retained by an ATM” and “failed cash
-  withdrawal” counts as covered: the right answer is present, even though we
-  still need a person to choose between the two. This is why coverage and the
-  accuracy of automatic routing are different things.
+**This calibrated coverage promise is what the fixed naive cutoff does not
+provide, even when the two methods have similar automation/error curves.**
+It concerns the prediction sets, including those sent to review, not the error
+rate among automatic decisions or coverage for every support category. The
+protection can also change when incoming requests change, so useful routing
+still requires examining errors and the work left for human review.
 
-- **A 90% target is a statistical promise, not a fixed result for every run.**
-  The guarantee is that the correct answer is retained in at least nine out of
-  ten cases on average, assuming calibration and future requests are drawn
-  independently from the same unchanged population.
+## Main results
 
-- **Keeping the right answer available does not guarantee correct automation.**
-  The promise is not about getting nine out of ten automatic decisions right,
-  and some support categories can fare worse than others. We therefore measure
-  automatic-routing errors and results for individual categories separately,
-  rather than treating coverage as a general certificate of reliability.
+BANKING77 contains about 13,000 short English banking-support requests, each
+labelled with one of 77 **intents**, such as a missing card or a pending transfer.
+The closely related categories make it a useful setting for deciding when to
+defer. All systems choose among these same categories; the LLM classifies
+requests rather than writing replies or taking banking actions.
 
-- **The protection can change when the requests change.** If incoming requests
-  shift from familiar card questions to unfamiliar fraud complaints, for
-  example, the earlier calibration may no longer provide the same protection.
+The results below use one shared split and all **3,080 official test requests**,
+with separate training-set examples for tuning and calibration. They are not
+the five-run averages reported in the score and representation studies.
 
-## BANKING77: one task, a shared benchmark
+### How much can Qwen automate, and at what error rate?
 
-BANKING77 contains about 13,000 short English banking-support requests. Each
-has one of 77 **intents**: the kind of help the customer needs, such as finding a
-missing card or checking a pending transfer. The easily confused categories make
-human review relevant, and the dataset is small enough for repeated experiments.
+We use the local, 4-bit `Qwen3-4B-Instruct-2507` without task-specific training.
+A fixed prompt asks it to identify the intent, and we score each possible
+category name as an answer. LAC, tuned SOCOP and naive confidence then use the
+same saved scores to decide which requests to automate.
 
-Both classifiers and the planned LLM will choose from **the same 77 categories**.
-The LLM's job is classification, not writing customer replies or taking banking
-actions. We compare them on the same official test requests, using separate
-examples to calibrate each model. The [data guide](data/README.md) explains the
-source, setup and limitations.
+![Qwen: LAC, tuned SOCOP and naive confidence automation versus error](docs/banking77/llm/figures/qwen_automation_vs_error.png)
 
-## Milestones
+The plot shows how automation changes as we vary the conformal coverage target
+or the naive confidence cutoff. The horizontal axis is the fraction of requests
+handled automatically; the vertical axis is the fraction of those decisions
+that are wrong. Blue is LAC, orange is SOCOP and green is naive confidence.
+Lines connect tested settings on the same requests, not an optimal frontier.
 
-| Milestone | Status | Purpose |
-|:----------|:-------|:--------|
-| Synthetic validation | Complete | Check the method on generated data under controlled conditions. [Report](docs/synthetic_validation.md). |
-| BANKING77 baseline | Complete | Establish what a simple word-based classifier can automate. [Report](docs/banking77_validation.md). |
-| Score comparison | Implemented | Compare LAC, APS and SOCOP using the same classifier and test requests. [Report](docs/banking77/score_comparison/comparison.md). |
-| Representation comparison | Implemented | Compare word-based features with a frozen pretrained text encoder, keeping the classifier family and routing rules unchanged. [Report](docs/banking77/representation_comparison/comparison.md). |
-| LLM comparison | Planned | Compare the same routing rule across classifiers and an LLM. |
-| Changing conditions | Planned | Test whether changing instructions or incoming requests requires updating calibration. |
+At the 95% coverage target, SOCOP trades a higher error rate for more automation:
+it handles **13.99%** of requests with **5.57%** error, compared with LAC's
+**2.92%** and **1.11%**. Neither improves both measures.
+Naive confidence remains competitive where the evaluated settings overlap;
+there is no clear overall routing advantage for conformal in that region.
+The naive grid has no nonzero-automation point below 46.43%, so the comparison
+does not establish equivalence in the low-automation region.
 
-## First results on BANKING77
-
-The first experiment uses a classifier that learns to recognise support
-categories from the words in a request. Alongside the conformal shortlist rule,
-we test a simpler **confidence rule**: accept the model's top answer when its
-confidence score is above a chosen cutoff. Both rules use the same model.
-
-The conformal rule used here is **LAC**. It considers each intent separately,
-keeping it when the probability assigned by the classifier meets a cutoff
-learned during calibration. Several intents can pass, or none can; the rule
-does not explicitly favour a shortlist containing exactly one answer.
-
-At a **90% coverage target**, the conformal shortlist contains the correct answer
-for **90.08% of test requests**. It routes **53.49% automatically**, of which
-**5.51% are wrong**. These results are averages from five runs that change which
-examples are used for training and calibration, while keeping the test requests
-the same.
-
-### How much automation, at what error rate?
-
-We tested several configurations of both methods, varying **the coverage target
-for the conformal method (LAC)** and **the confidence cutoff for the naive rule**.
-Every configuration was evaluated in all five runs described above. Within each
-run, both methods used the same classifier and test requests, so the comparison
-concerns the routing rules rather than different models.
-
-- **Our preferred high-automation trade-off is LAC with a 70% coverage target
-  (`alpha=0.3`).** It retains almost all the automation achieved at the 80%
-  coverage target, but with fewer mistakes among the requests handled
-  automatically. This makes it the configuration we highlight from the tested
-  high-automation choices.
-
-- **The closest tested naive configuration uses a 20% confidence cutoff
-  (`tau=0.2`).** Its average automation rate is the nearest to that LAC setting,
-  making it the relevant comparison for asking which rule makes fewer mistakes
-  while handling a similar amount of work.
-
-The table shows the average results across the five runs:
-
-| Rule and chosen setting | Requests handled automatically | Wrong answers among those handled |
-|:------------------------|-------------------------------:|----------------------------------:|
-| LAC, 70% coverage target (`alpha=0.3`) | 68.08% | 5.18% |
-| Naive, 20% confidence cutoff (`tau=0.2`) | 65.06% | 6.46% |
-
-At these settings, LAC handles **3.02 percentage points more requests** while
-reducing the error rate among those handled by **1.28 percentage points**.
-Both improvements hold in each of the five runs.
-
-Other choices are possible. A stricter naive cutoff can achieve lower error by
-automating less, while a requirement for 90% set coverage would rule out this
-70% LAC configuration. The highlighted choice therefore reflects a favourable
-high-automation balance in this experiment, not a setting that is best for every
-requirement.
-
-The curves below put this comparison in context by showing **all evaluated
-configurations**, including choices that prioritise lower error over greater
-automation.
-
-![BANKING77 automation versus automated-case error, highlighting LAC alpha 0.3 in red across five splits](docs/figures/banking77/automation_vs_error.png)
-
-- The **horizontal axis** shows the proportion of requests handled automatically,
-  while the **vertical axis** shows the proportion of those decisions that are
-  wrong. At the same automation rate, a lower point indicates fewer routing
-  errors; at the same error rate, a point further right indicates more automation.
-
-- The **blue curves** represent conformal selection (labelled “LAC”), and the
-  **orange curves** represent the confidence rule (“Naive”). Each method has five
-  curves, one per run. The points along a curve correspond to different settings
-  applied to the same model and test requests within that run.
-
-- The **red points** mark the 70% conformal coverage target used in the table.
-  The “best trade off” label refers to the high-automation choice discussed
-  above. It was highlighted after examining the results, not selected as a
-  deployment policy.
-
-Coverage also varies across support categories, and the calibration and test
-data contain different proportions of intents. The
-[BANKING77 report](docs/banking77_validation.md) discusses these limitations,
-explains the curve shapes and presents the remaining results.
-
-## Comparing shortlist rules: LAC, APS and SOCOP
-
-The follow-up study keeps the same five classifiers and test requests, but
-compares the LAC baseline with APS and SOCOP. The model's predictions stay the
-same; what changes is how we turn them into a shortlist.
-
-- **APS builds the shortlist from ranked probabilities.** It orders intents
-  from most to least likely and adds their probabilities as it moves down the
-  list. Our implementation keeps an intent only if the total, including that
-  intent, does not exceed a limit learned during calibration. Spread-out
-  probabilities can produce a long shortlist; if even the first intent exceeds
-  the limit, the set is empty.
-
-- **SOCOP is designed to produce more one-answer shortlists.** It balances that
-  aim against the size of the sets left for review. Favouring single answers
-  more strongly can increase automation, but leave broader shortlists for the
-  requests that still need a person. It changes the routing trade-off, not the
-  classifier's ability to recognise the correct intent.
-
-We compare a fixed SOCOP configuration with settings selected on separate
-labelled examples for each coverage target, choosing those that produce the
-most one-label sets. Individual choices use tuning data only and are made
-before final calibration. However, the candidate grid was expanded after
-preliminary test results were inspected, so this comparison remains exploratory.
-Reserving examples for tuning leaves fewer for calibration, so the fresh LAC
-results differ slightly from the original study above.
-
-![LAC, APS, fixed and tuned SOCOP, and naive confidence: automation versus error among automated requests](docs/banking77/score_comparison/figures/automation_vs_error.png)
-
-The plot shows how much work each rule automates and how often those decisions
-are wrong. Moving right means more automation; moving down means fewer mistakes
-among automated requests. Bold curves show five-run means, faint curves show
-individual runs, and points represent different coverage targets or confidence
-cutoffs.
-
-- **LAC offers a competitive balance around two-thirds automation.** It makes
-  fewer mistakes than the nearby tested confidence cutoff. That setting uses
-  a 70% coverage target, however, so it is not an option when higher prediction-set
-  coverage is required.
-
-- **APS is not effective for automatic routing in this configuration.** It
-  usually returns several labels or no label, leaving few requests automated.
-  Those few are not reliably the easiest cases: at the 90% coverage target,
-  automation is only 3.53%, with 9.22% error among automated requests.
-
-- **SOCOP offers two particularly interesting tuned configurations**, depending
-  on how much automation is needed and how many errors can be accepted:
-
-  - **95% coverage target: more automation.** It automates **72.49%** of requests
-    with **6.93% mean error**, versus 65.06% and 6.46% for the tested 20%
-    confidence cutoff. More requests are handled automatically, at a modest
-    increase in the proportion of mistakes—not an improvement on both measures.
-
-  - **99% coverage target: fewer errors.** It automates **44.90%** with **1.70%
-    mean error**, compared with 34.84% and 2.20% for the tested 40% confidence
-    cutoff. Both improvements hold in four of five runs. The mean below 2%
-    is not an enforced error ceiling.
-
-  - **Pushing automation further has a cost.** At the 85% coverage target,
-    tuned SOCOP automates 98.68% but makes errors in 15.23% of those decisions.
-    The curves then turn back: lowering coverage first turns multi-label sets
-    into singletons, but eventually produces empty sets that require review again.
-
-- **Naive confidence remains competitive at several settings.** Stricter
-  cutoffs can reduce errors by accepting fewer requests, making this simple
-  rule an important baseline. Unlike the conformal methods, it does not provide
-  a calibrated prediction set with a coverage target.
-
-**The best trade-off depends on the goal:** handling more requests automatically,
-making fewer routing errors, or retaining the correct intent at a higher coverage
-target. In this study, tuned SOCOP stands out for combining high coverage with
-substantial automation, particularly at 95% and 99%. LAC and naive confidence
-remain competitive at several settings, so there is no single best choice for
-every requirement. High coverage does not guarantee few mistakes among automated
-decisions, and SOCOP's broad deferred sets can still leave considerable work for
-a human reviewer.
-
-The [full score comparison](docs/banking77/score_comparison/comparison.md)
-explains these exploratory findings, coverage, review-set sizes and limitations.
-
-## From word features to a frozen text encoder
-
-This comparison changes how requests are represented, keeping the same
-five data splits, official test requests, logistic-regression settings and routing
-rules. A pretrained MiniLM encoder converts each request into a numerical vector
-without updating its weights. Replacing word-based TF-IDF features raises mean
-classifier accuracy from **84.01% to 90.14%**.
+### What does calibrated coverage add?
 
 <p>
-  <img src="docs/banking77/representation_comparison/figures/automation_vs_error_lac.png" width="49%" alt="LAC: automation versus error with TF-IDF and the frozen encoder">
-  <img src="docs/banking77/representation_comparison/figures/automation_vs_error_socop.png" width="49%" alt="Tuned SOCOP: automation versus error with TF-IDF and the frozen encoder">
+  <img src="docs/banking77/llm/figures/qwen_coverage_vs_target.png" width="49%" alt="Qwen: observed prediction-set coverage versus target for LAC and tuned SOCOP">
+  <img src="docs/banking77/llm/figures/qwen_set_size_vs_coverage.png" width="49%" alt="Qwen: mean prediction-set size versus observed coverage for LAC and tuned SOCOP">
 </p>
 
-The plots compare TF-IDF in blue with the encoder in orange. Moving right means
-more automation; moving down means fewer errors among automatic decisions.
-Bold curves show five-run means, faint curves individual runs, and points
-represent different coverage targets.
+The left plot compares requested and observed coverage for LAC (blue) and SOCOP
+(orange), with approximate 95% Wilson intervals. Both retain the correct intent
+at or above every tested target, even though Qwen's top answer is correct on
+only **61.04%** of requests. This illustrates what conformal adds: a calibrated
+set of alternatives tied to a coverage target, rather than simply accepting or
+rejecting the top answer. Under the assumptions described above, that set comes
+with a coverage promise that the fixed naive cutoff does not provide; it is
+not a guarantee on errors among automated decisions.
 
-- **LAC benefits substantially:** at the 90% coverage target, automation rises
-  from **52.85% to 86.64%**, with similar error among automated requests
-  (**5.37% versus 5.10%**). The encoder therefore handles substantially more
-  requests without increasing the average error rate at this setting.
+The right plot shows the cost of retaining those alternatives: average set size
+across all test requests rises sharply with observed coverage. At the **99%
+target**, both methods keep roughly **49 of the 77 intents** on average. The
+correct answer remains available more often, but the reviewer may still face a
+long list of possibilities. Calibration therefore adds statistical protection
+for the set without repairing the model's ability to choose the right answer.
 
-- **Tuned SOCOP improves both routing metrics at the highlighted targets:**
+### How much does the underlying model matter?
 
-  - **95% target:** automation rises from **72.49% to 88.23%**, while error falls
-    from **6.93% to 5.22%**. This is the higher-automation choice.
-  - **99% target:** automation rises from **44.90% to 65.00%**, while error falls
-    from **1.70% to 1.03%**. This sacrifices automation for fewer mistakes.
-    These are five-run averages, not guaranteed error limits.
+The table compares Qwen with two classifiers using **tuned SOCOP at a 95%
+coverage target**, calibrated separately on the same records. Both classifiers
+use logistic regression trained on 7,502 labelled requests: one represents
+text with word TF-IDF features, while the other uses vectors from a frozen
+MiniLM encoder. Unlike Qwen, they receive task-specific training, so this is
+a comparison of the evaluated systems, not matched training budgets.
 
-The curves can turn back as lower coverage targets first produce more singletons,
-then more empty sets that require review. SOCOP also selects its penalty setting
-separately for each target, so improvements need not be uniform across settings.
+| System | Observed coverage | Automation | Automated-case error |
+|:-------|------------------:|-----------:|---------------------:|
+| Word TF-IDF + logistic regression | 95.13% | 69.71% | 6.66% |
+| Frozen encoder + logistic regression | 95.71% | 86.95% | 4.82% |
+| Qwen 4B, prompted label scoring | 95.52% | 13.99% | 5.57% |
 
-### How does conformal routing compare with naive confidence?
+All three reach similar coverage, but the encoder handles far more requests
+than Qwen with a lower observed error rate. TF-IDF also automates much more,
+though with a higher error rate. The distinction is practical:
+retaining the correct answer in a set is useful, but the underlying model
+determines how much work can be automated while keeping mistakes low.
 
-The next plot keeps the encoder predictions fixed and compares LAC, tuned SOCOP
-and naive confidence, which accepts the top answer above a chosen cutoff.
+These findings concern one Qwen model, prompt and scoring rule, not all LLMs.
+The comparison is exploratory, with prior test inspection and unknown
+pretraining exposure. BANKING77's official splits also differ in intent
+mixture and contain text overlaps, as explained in the [data guide](data/README.md#split-limitations).
+Reaching the coverage targets empirically does not establish that the
+guarantee's assumptions hold for this benchmark.
 
-![Frozen encoder: LAC, tuned SOCOP and naive confidence automation versus error](docs/banking77/representation_comparison/figures/encoder_automation_vs_error.png)
+## Explore the reports
 
-- **Naive confidence is competitive with SOCOP**, with broadly similar
-  automation–error trade-offs when variation across seeds is considered. The
-  curves do not establish a clear overall routing advantage for conformal
-  prediction with this stronger encoder.
-- **The main gain comes from the text representation.** It improves the useful
-  trade-offs for both LAC and SOCOP. Conformal prediction still adds a calibrated
-  coverage target, but that is different from guaranteeing fewer automatic
-  errors; SOCOP can also leave broad sets for human review.
+The studies build on one another, from checking the methods on generated data
+to evaluating a local LLM. The [documentation index](docs/README.md) collects
+the reports, supporting notebooks and execution guides.
 
-The [representation report](docs/banking77/representation_comparison/comparison.md)
-discusses coverage, review-set sizes and study limitations. These exploratory
-results provide a stronger classifier reference for the planned LLM study.
+The [synthetic validation](docs/synthetic/validation.md) establishes the
+foundation under controlled conditions. Repeated simulations check whether
+coverage behaves as expected, while a trained multiclass example shows how
+LAC, APS and SOCOP produce different sets and automation rates despite sharing
+a coverage target.
 
-## Repository structure
+The [TF-IDF and LAC baseline](docs/banking77/baseline/tfidf_lac.md) then brings
+the workflow to real banking-support requests. A simple word-based classifier
+provides the scores, and repeated training/calibration splits compare LAC with
+naive confidence. This gives a first practical reference: LAC improves on some
+tested confidence settings, but does not dominate the full routing trade-off.
 
-```text
-src/conformal_selective_prediction/   # Reusable methods, data loading and classifier
-examples/
-├── synthetic_multiclass.py           # Self-contained example
-├── banking77_baseline.py             # One BANKING77 run, step by step
-├── banking77_validation.py           # Historical LAC baseline across several runs
-├── banking77_scores/                 # Shared preparation, score studies and comparison
-└── banking77_representations/        # Frozen encoder and paired representation comparison
-tests/                               # Checks for the mathematics and routing rules
-docs/                                # Reports and saved figures
-data/README.md                       # Dataset setup and limitations
-.github/workflows/ci.yml             # Automated checks
-pyproject.toml                       # Package and tool configuration
-```
+With those classifier predictions held fixed, the
+[score comparison](docs/banking77/scores/lac_aps_socop.md) asks whether changing
+how sets are built improves automation. It examines APS and SOCOP alongside
+LAC, including SOCOP tuning on examples reserved separately from calibration.
+The report explains why APS automates little in this setup and how SOCOP's
+useful high-coverage choices can leave broader sets for review.
 
-Automated checks cover tests, code style and types. Downloaded data and generated
-outputs stay local; the report figures are saved in Git.
+The [representation study](docs/banking77/representations/tfidf_vs_encoder.md)
+changes the source of the scores instead, replacing word-based features with
+a frozen text encoder while keeping logistic regression and the routing rules.
+It shows a substantial improvement for both LAC and SOCOP, while naive
+confidence remains competitive. This separates the benefit of better text
+representations from the benefit of conformal calibration itself.
 
-## Installation and running
+The [Qwen study](docs/banking77/llm/qwen.md) extends the same decision layer to
+an LLM without task-specific training. It uses a fixed prompt to score possible
+intent names, then applies the routing rules to those saved scores. The report
+examines both the promise and the practical cost of calibration: high coverage
+is achievable, but often through limited automation and long lists for review.
+
+Finally, the [Qwen–classifier comparison](docs/banking77/llm/qwen_vs_classifiers.md)
+evaluates all three systems on the same records, using one matched split rather
+than the five-run averages of the earlier studies. It puts the LLM results in
+perspective against TF-IDF and the frozen encoder, showing why similar coverage
+can accompany very different automation rates. The conclusions remain specific
+to these systems, which have different task-specific training histories.
+
+## Repository guide
+
+| Location | Role in the project |
+|:---------|:--------------------|
+| [src/conformal_selective_prediction/](src/conformal_selective_prediction/) | Reusable scores, calibration, routing, metrics and model helpers |
+| [examples/](examples/) | Runnable synthetic and BANKING77 studies, including cached LLM scoring |
+| [notebooks/](notebooks/) | Guided exploration of the methods and LLM scoring |
+| [docs/](docs/README.md) | Reports, interpretation and reviewed figure snapshots |
+| [tests/](tests/), [CI](.github/workflows/ci.yml) | Checks for the mathematics, routing rules, code style and types |
+| [data/](data/README.md), `outputs/` | Dataset instructions and local experiment artifacts; downloaded data and generated outputs are not version-controlled |
+
+## Run locally
 
 Use Python 3.12 or later. From the repository root, on macOS/Linux:
 
@@ -330,24 +215,37 @@ python -m pip install -e ".[example,dev]"
 ```
 
 This installs the examples and development tools. For the NumPy-only library,
-use `python -m pip install -e .`.
-
-Start with the synthetic example, which needs no downloaded data:
+use `python -m pip install -e .`. Start without downloaded data:
 
 ```bash
 python examples/synthetic_multiclass.py
 ```
 
-For BANKING77, first follow the [data setup instructions](data/README.md).
-Then run the step-by-step example or the comparison across several runs:
+For BANKING77, follow the [data setup](data/README.md), then run:
 
 ```bash
 python examples/banking77_baseline.py
 python examples/banking77_validation.py
 ```
 
-Results are saved to `outputs/banking77/`, replacing same-named files when rerun.
-The reports explain how to reproduce them.
+Results go to `outputs/banking77/`, replacing same-named files when rerun.
+The [encoder guide](examples/banking77_representations/README.md) and
+[LLM guide](examples/banking77_llm/README.md) cover their optional dependencies,
+preparation and evaluation. Local Qwen inference uses MLX on Apple silicon;
+once its scores are saved, routing comparisons can run without repeating
+model inference.
+
+## What's next
+
+The next study will change the prompt while keeping the original calibration
+threshold, then recalibrate on separate examples to examine whether coverage
+persists or is restored. This tests how the decision layer behaves when the
+conditions behind its calibration change.
+
+The reusable functions will also be consolidated into a small interface for
+calibrating, saving and applying a decision policy to scores from other models.
+The scope remains classification with a fixed set of labels, not a general
+evaluator of free-form generated answers or a deployed automation service.
 
 ## License
 

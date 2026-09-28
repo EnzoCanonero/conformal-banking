@@ -1,5 +1,7 @@
 # BANKING77: APS and singleton routing
 
+[All reports](../../README.md)
+
 The implemented APS method tracks the coverage targets reasonably closely, but
 is a poor singleton router with these TF-IDF/logistic-regression probabilities.
 At the 90% target, it automates only **3.53%** of requests, with **9.22% error
@@ -7,7 +9,7 @@ among automated cases**. Most requests produce large sets or empty sets and
 therefore require review. This result concerns the particular deterministic APS
 convention and model used here, not every method called APS.
 
-The [shared comparison](comparison.md) describes the prepared predictions,
+The [shared comparison](lac_aps_socop.md) describes the prepared predictions,
 data-split limitations and reproduction commands. APS uses the same five models
 and final-calibration records as the other conformal methods; it needs no tuning.
 
