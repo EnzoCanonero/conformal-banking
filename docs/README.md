@@ -1,11 +1,22 @@
-# Studies and results
+# API usage and study reports
+
+## API — use the decision layer
+
+To apply the decision layer to your own model outputs, start with the
+[usage guide](usage.md) and [runnable quickstart](../examples/api/quickstart.py).
+They cover calibration, saved policies, routing and evaluation without BANKING77
+data or a model backend. The API wraps the same functions used explicitly in
+the study scripts.
+
+For a cell-by-cell walkthrough, open the
+[API mini notebook](../notebooks/api/01_quickstart.ipynb).
+
+## Studies — follow the project's progression
 
 The [project overview](../README.md) explains the goal: decide when a classifier
 or LLM can route a request automatically and when it should defer to a person.
 These reports follow the evidence from synthetic validation to BANKING77 and
 the local LLM study.
-
-## Suggested reading order
 
 1. **Do the conformal methods behave as expected on controlled data?**
    [Synthetic validation](synthetic/validation.md) checks coverage across
