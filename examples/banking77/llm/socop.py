@@ -5,8 +5,8 @@ from conformal_selective_prediction import (
     socop_prediction_sets,
     socop_scores,
 )
-from examples.banking77_scores._diagnostics import set_size_rows
-from examples.banking77_scores._socop_tuning import select_regularizations
+from examples.banking77.scores._diagnostics import set_size_rows
+from examples.banking77.scores._socop_tuning import select_regularizations
 
 from ._data import load_predictions
 from ._evaluation import ALPHAS, SOCOP_REGULARIZATIONS, evaluate_sets, save_evaluation

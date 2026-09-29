@@ -23,7 +23,7 @@ TF-IDF and a frozen text encoder.
   log-probabilities, including the end-of-response token, then normalize across
   candidates. These weights express relative preference, not verified chances
   of being correct. The pinned revision and prompt are in the
-  [running guide](../../../examples/banking77_llm/README.md#fixed-setup).
+  [running guide](../../../examples/banking77/llm/README.md#fixed-setup).
 - **Separate tuning, calibration and test requests.** Seed 42 gives two tuning
   halves of 625 and 1,251 final-calibration requests from the official training
   data. Evaluation uses all 3,080 official test requests. This is one fixed
@@ -164,12 +164,12 @@ writes, so they are not end-to-end benchmarks. With the complete score cache,
 reproduce the Qwen metrics without inference:
 
 ```bash
-python -m examples.banking77_llm.lac
-python -m examples.banking77_llm.naive
-python -m examples.banking77_llm.socop
+python -m examples.banking77.llm.lac
+python -m examples.banking77.llm.naive
+python -m examples.banking77.llm.socop
 ```
 
-The [running guide](../../../examples/banking77_llm/README.md) covers preparation
+The [running guide](../../../examples/banking77/llm/README.md) covers preparation
 and outputs under `outputs/banking77/llm/full/`. The figures are snapshots from
 the shared comparison script, which also includes the classifier study's
 existing naive cutoffs. Refresh them together with the reported numbers.

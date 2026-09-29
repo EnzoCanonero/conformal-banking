@@ -198,7 +198,7 @@ to these systems, which have different task-specific training histories.
 | Location | Role in the project |
 |:---------|:--------------------|
 | [src/conformal_selective_prediction/](src/conformal_selective_prediction/) | Reusable scores, calibration, routing, metrics and model helpers |
-| [examples/](examples/) | Runnable synthetic and BANKING77 studies, including cached LLM scoring |
+| [examples/](examples/README.md) | Runnable synthetic and BANKING77 studies, including cached LLM scoring |
 | [notebooks/](notebooks/) | Guided exploration of the methods and LLM scoring |
 | [docs/](docs/README.md) | Reports, interpretation and reviewed figure snapshots |
 | [tests/](tests/), [CI](.github/workflows/ci.yml) | Checks for the mathematics, routing rules, code style and types |
@@ -218,19 +218,19 @@ This installs the examples and development tools. For the NumPy-only library,
 use `python -m pip install -e .`. Start without downloaded data:
 
 ```bash
-python examples/synthetic_multiclass.py
+python -m examples.synthetic.multiclass
 ```
 
 For BANKING77, follow the [data setup](data/README.md), then run:
 
 ```bash
-python examples/banking77_baseline.py
-python examples/banking77_validation.py
+python -m examples.banking77.baseline.single_run
+python -m examples.banking77.baseline.validation
 ```
 
 Results go to `outputs/banking77/`, replacing same-named files when rerun.
-The [encoder guide](examples/banking77_representations/README.md) and
-[LLM guide](examples/banking77_llm/README.md) cover their optional dependencies,
+The [encoder guide](examples/banking77/representations/README.md) and
+[LLM guide](examples/banking77/llm/README.md) cover their optional dependencies,
 preparation and evaluation. Local Qwen inference uses MLX on Apple silicon;
 once its scores are saved, routing comparisons can run without repeating
 model inference.

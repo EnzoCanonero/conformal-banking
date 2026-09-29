@@ -15,7 +15,7 @@ and figures in this report retain the original experiment.
 
 ## Experiment setup
 
-The [validation script](../../../examples/banking77_validation.py) uses the official
+The [validation script](../../../examples/banking77/baseline/validation.py) uses the official
 [BANKING77 files](../../../data/README.md), pinned to revision
 `57ec275d8078af65b7731c2a98be812d844a6d6b`:
 
@@ -26,7 +26,7 @@ The [validation script](../../../examples/banking77_validation.py) uses the offi
 - Use seeds `7, 21, 42, 84, 123` to vary training and calibration partitions.
 - Fit word TF-IDF unigrams and bigrams followed by logistic regression. Both
   preprocessing and classifier fitting use only the training partition; the
-  [script](../../../examples/banking77_validation.py) records the fixed model settings.
+  [script](../../../examples/banking77/baseline/validation.py) records the fixed model settings.
 - Fit once per seed and reuse predictions across policy settings, without
   choosing a deployment threshold from test performance.
 
@@ -47,7 +47,7 @@ before evaluation.
 ## Results at the reference settings
 
 The reference settings, `alpha=0.1` and `tau=0.5`, come from the
-[single-split example](../../../examples/banking77_baseline.py), not a search for the
+[single-split example](../../../examples/banking77/baseline/single_run.py), not a search for the
 best test results. Classifier accuracy averages 84.01% (83.83–84.29%).
 
 Tables report arithmetic means across five splits, with minimum–maximum ranges.
@@ -185,10 +185,10 @@ from the repository root:
 
 ```bash
 python -m pip install -e ".[example]"
-python examples/banking77_validation.py
+python -m examples.banking77.baseline.validation
 ```
 
-The shorter `python examples/banking77_baseline.py` walkthrough uses seed 42,
+The shorter `python -m examples.banking77.baseline.single_run` walkthrough uses seed 42,
 already included here. Validation replaces generated files in
 `outputs/banking77/`, but not the four reviewed snapshots in
 `docs/banking77/baseline/figures/`. Update snapshots and reported numbers together only

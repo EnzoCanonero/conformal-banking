@@ -5,7 +5,7 @@ from conformal_selective_prediction import (
     lac_prediction_sets,
     lac_scores,
 )
-from examples.banking77_scores._diagnostics import set_size_rows
+from examples.banking77.scores._diagnostics import set_size_rows
 
 from ._data import load_predictions
 from ._evaluation import ALPHAS, evaluate_sets, save_evaluation

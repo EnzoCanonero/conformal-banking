@@ -62,9 +62,9 @@ the local LLM study.
 - **Reports explain results and limitations.** Each report links to its
   reproduction commands; figures live alongside the study they describe.
 - **Execution guides explain how to run the code.** Start with the
-  [data guide](../data/README.md), then use the
-  [representation guide](../examples/banking77_representations/README.md) or
-  [LLM guide](../examples/banking77_llm/README.md) for those workflows.
+  [data guide](../data/README.md) and [examples index](../examples/README.md), then use the
+  [representation guide](../examples/banking77/representations/README.md) or
+  [LLM guide](../examples/banking77/llm/README.md) for those workflows.
 - **Notebooks are exploratory walkthroughs.** Follow the
   [synthetic introduction](../notebooks/synthetic/01_lac_basics.ipynb),
   [TF-IDF routing example](../notebooks/banking77_tfidf/01_lac_routing.ipynb), or

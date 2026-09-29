@@ -290,11 +290,11 @@ Use Python 3.12, install `.[example]`, and follow the
 [data setup](../../../data/README.md#download). From the repository root:
 
 ```bash
-python -m examples.banking77_scores.prepare
-python -m examples.banking77_scores.lac
-python -m examples.banking77_scores.aps
-python -m examples.banking77_scores.socop
-python -m examples.banking77_scores.compare
+python -m examples.banking77.scores.prepare
+python -m examples.banking77.scores.lac
+python -m examples.banking77.scores.aps
+python -m examples.banking77.scores.socop
+python -m examples.banking77.scores.compare
 ```
 
 If the experiment outputs already exist, run only the last command. It checks

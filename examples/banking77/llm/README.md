@@ -6,9 +6,9 @@ results. Separate scripts then evaluate LAC, naive confidence and tuned SOCOP
 using that cache, without loading the LLM again. A comparison script evaluates
 the same rules on saved TF-IDF and frozen-encoder predictions.
 
-- [Qwen study](../../docs/banking77/llm/qwen.md): routing trade-offs, coverage
+- [Qwen study](../../../docs/banking77/llm/qwen.md): routing trade-offs, coverage
   and review burden for the LLM on its own.
-- [Classifier comparison](../../docs/banking77/llm/qwen_vs_classifiers.md): Qwen against
+- [Classifier comparison](../../../docs/banking77/llm/qwen_vs_classifiers.md): Qwen against
   TF-IDF and the frozen encoder on matched requests.
 
 ## Fixed setup
@@ -65,20 +65,20 @@ does not establish the exchangeability needed by the coverage guarantee.
 
 Use the existing `llm-scorekit` environment. If setting up another Apple-silicon
 environment, install `python -m pip install -e ".[example,llm]"`. Keep the local
-files described in [the data guide](../../data/README.md) available.
+files described in [the data guide](../../../data/README.md) available.
 
 Preview the sample sizes, cache status and estimated time without importing MLX,
 loading the model or writing outputs:
 
 ```bash
-python -m examples.banking77_llm.prepare --dry-run
+python -m examples.banking77.llm.prepare --dry-run
 ```
 
 Run scoring, keeping the Mac connected to power. `caffeinate` prevents idle
 sleep while the command runs; keep the laptop lid open:
 
 ```bash
-caffeinate -i python -m examples.banking77_llm.prepare
+caffeinate -i python -m examples.banking77.llm.prepare
 ```
 
 The full run is complete: **5,581 requests** recorded **12 hours 47 minutes**
@@ -130,9 +130,9 @@ Python objects are stored in them.
 Once all **5,581 requests** are scored, run the methods independently:
 
 ```bash
-python -m examples.banking77_llm.lac
-python -m examples.banking77_llm.naive
-python -m examples.banking77_llm.socop
+python -m examples.banking77.llm.lac
+python -m examples.banking77.llm.naive
+python -m examples.banking77.llm.socop
 ```
 
 These commands need only the completed cache and the `example` dependencies;
@@ -188,7 +188,7 @@ With the full LLM cache and the existing seed-42 classifier archives available,
 run:
 
 ```bash
-python -m examples.banking77_llm.compare
+python -m examples.banking77.llm.compare
 ```
 
 This needs only the `example` dependencies. It does not train classifiers, load

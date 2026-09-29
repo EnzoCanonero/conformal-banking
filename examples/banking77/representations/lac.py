@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ..banking77_scores.lac import run_experiment as evaluate_lac
+from ..scores.lac import run_experiment as evaluate_lac
 from ._reference import save_reference, validate_reference
 
 

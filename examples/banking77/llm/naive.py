@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from examples.banking77_scores._evaluation import naive_metrics
+from examples.banking77.scores._evaluation import naive_metrics
 
 from ._data import load_predictions
 from ._evaluation import CONFIDENCE_LEVEL, CONFIDENCE_THRESHOLDS, save_evaluation

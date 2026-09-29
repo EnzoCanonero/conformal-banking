@@ -6,9 +6,9 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from examples.banking77_scores._artifacts import save_csv, save_manifest
-from examples.banking77_scores._data import PartitionPredictions
-from examples.banking77_scores._evaluation import prediction_set_metrics
+from examples.banking77.scores._artifacts import save_csv, save_manifest
+from examples.banking77.scores._data import PartitionPredictions
+from examples.banking77.scores._evaluation import prediction_set_metrics
 
 
 ALPHAS = (0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50)

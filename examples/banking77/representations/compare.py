@@ -1,8 +1,8 @@
 from importlib.metadata import version
 from pathlib import Path
 
-from ..banking77_scores._artifacts import load_manifest, save_csv, save_manifest
-from ..banking77_scores._comparison_data import summarize_metrics
+from ..scores._artifacts import load_manifest, save_csv, save_manifest
+from ..scores._comparison_data import summarize_metrics
 from ._comparison_data import load_results, summarize_results
 from ._naive import evaluate_naive
 from ._plots import (

@@ -110,10 +110,10 @@ an estimated optimum; selected SOCOP lambdas can also change between targets.
 Regenerate the comparison from saved predictions, without training or inference:
 
 ```bash
-python -m examples.banking77_llm.compare
+python -m examples.banking77.llm.compare
 ```
 
-The [running guide](../../../examples/banking77_llm/README.md) covers the required
+The [running guide](../../../examples/banking77/llm/README.md) covers the required
 artifacts. Tables and source hashes are saved under
 `outputs/banking77/llm/full/comparison/`. Figures here are snapshots; refresh
 them together with the reported numbers.

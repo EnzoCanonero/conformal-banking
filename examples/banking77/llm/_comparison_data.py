@@ -4,8 +4,8 @@ from typing import Any
 
 import numpy as np
 
-from examples.banking77_scores._artifacts import load_manifest, load_prepared_seed
-from examples.banking77_scores._data import PartitionPredictions
+from examples.banking77.scores._artifacts import load_manifest, load_prepared_seed
+from examples.banking77.scores._data import PartitionPredictions
 
 
 # Align a classifier's saved predictions with the LLM's exact records and columns.

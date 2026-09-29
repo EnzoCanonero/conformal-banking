@@ -11,14 +11,14 @@ from sklearn.linear_model import LogisticRegression
 
 from conformal_selective_prediction.data import TextDataset, load_banking77
 
-from ..banking77_scores._artifacts import (
+from ..scores._artifacts import (
     load_manifest,
     load_prepared_seed,
     save_manifest,
     save_prepared_seed,
 )
-from ..banking77_scores._data import PartitionPredictions, PreparedData
-from ..banking77_scores.prepare import DATA_DIRECTORY, RANDOM_SEEDS, _dataset_hashes
+from ..scores._data import PartitionPredictions, PreparedData
+from ..scores.prepare import DATA_DIRECTORY, RANDOM_SEEDS, _dataset_hashes
 from ._data import combine_records, verify_reference
 from ._embeddings import load_or_encode_embeddings
 

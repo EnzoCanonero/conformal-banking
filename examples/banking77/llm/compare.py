@@ -11,10 +11,10 @@ from conformal_selective_prediction import (
     socop_prediction_sets,
     socop_scores,
 )
-from examples.banking77_scores._artifacts import load_manifest, save_csv, save_manifest
-from examples.banking77_scores._data import PartitionPredictions
-from examples.banking77_scores._evaluation import naive_metrics
-from examples.banking77_scores._socop_tuning import select_regularizations
+from examples.banking77.scores._artifacts import load_manifest, save_csv, save_manifest
+from examples.banking77.scores._data import PartitionPredictions
+from examples.banking77.scores._evaluation import naive_metrics
+from examples.banking77.scores._socop_tuning import select_regularizations
 
 from ._comparison_data import load_classifier
 from ._data import load_predictions

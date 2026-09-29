@@ -32,7 +32,7 @@ A small cache example, without loading BANKING77 or training a classifier:
 ```python
 from pathlib import Path
 
-from examples.banking77_representations._embeddings import load_or_encode_embeddings
+from examples.banking77.representations._embeddings import load_or_encode_embeddings
 
 texts = [
     "My card has not arrived.",
@@ -64,7 +64,7 @@ Keep the local BANKING77 files and the completed TF-IDF preparation available:
 five seed archives. Then run from the repository root:
 
 ```bash
-python -m examples.banking77_representations.prepare
+python -m examples.banking77.representations.prepare
 ```
 
 - **A paired comparison:** the saved TF-IDF sample IDs determine which requests
@@ -104,8 +104,8 @@ through their data and split IDs, not by treating them as the same model run.
 After preparation, run the methods independently from the repository root:
 
 ```bash
-python -m examples.banking77_representations.lac
-python -m examples.banking77_representations.socop
+python -m examples.banking77.representations.lac
+python -m examples.banking77.representations.socop
 ```
 
 - **Reuse prepared predictions:** these commands perform no encoding or
@@ -132,7 +132,7 @@ root. Each contains `metrics.csv`, `class_coverage.csv`, `set_sizes.csv` and
 With both encoder evaluations and their referenced TF-IDF results available:
 
 ```bash
-python -m examples.banking77_representations.compare
+python -m examples.banking77.representations.compare
 ```
 
 - **No model inference, training or recalibration.** The command checks the paired
@@ -159,7 +159,7 @@ comparison outputs on rerun. The manifest identifies both source preparations,
 the result files used and the encoder archives used for naive routing. Earlier
 experiments and their artifacts stay intact.
 
-The [report](../../docs/banking77/representations/tfidf_vs_encoder.md)
+The [report](../../../docs/banking77/representations/tfidf_vs_encoder.md)
 explains the results, with separate LAC and SOCOP images displayed side by side
 for automation/error and coverage, plus one encoder-only policy comparison.
 Its figure snapshots are saved separately in

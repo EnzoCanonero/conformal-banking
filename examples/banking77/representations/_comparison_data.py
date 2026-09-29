@@ -4,8 +4,8 @@ from typing import Any
 
 import numpy as np
 
-from ..banking77_scores._artifacts import load_manifest
-from ..banking77_scores._comparison_data import (
+from ..scores._artifacts import load_manifest
+from ..scores._comparison_data import (
     _check_metric_grid,
     _check_socop_choices,
     _load_metrics,

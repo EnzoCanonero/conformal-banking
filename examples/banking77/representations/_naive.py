@@ -3,8 +3,8 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
-from ..banking77_scores._artifacts import load_prepared_seed
-from ..banking77_scores._evaluation import naive_metrics
+from ..scores._artifacts import load_prepared_seed
+from ..scores._evaluation import naive_metrics
 
 
 # Apply fixed confidence cutoffs to cached encoder predictions without refitting.

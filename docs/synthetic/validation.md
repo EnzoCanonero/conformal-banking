@@ -9,7 +9,7 @@ whether coverage behaves as expected.
 
 ## One classifier, three shortlist rules
 
-The [synthetic example](../../examples/synthetic_multiclass.py) compares the methods
+The [synthetic example](../../examples/synthetic/multiclass.py) compares the methods
 without changing the classifier:
 
 - **The data and model stay fixed.** Seed `42` generates 8,000 examples with four
@@ -111,7 +111,7 @@ From the repository root, use Python 3.12 or later:
 
 ```bash
 python -m pip install -e ".[example,dev]"
-python examples/synthetic_multiclass.py
+python -m examples.synthetic.multiclass
 python -m pytest tests/test_conformal.py tests/test_selection.py
 ```
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from conformal_selective_prediction.data import Banking77Data, TextDataset
 
-from ..banking77_scores._data import PreparedData
+from ..scores._data import PreparedData
 
 
 # Reassemble the official records in a cache order independent of any random split.

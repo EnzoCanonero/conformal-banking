@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 from conformal_selective_prediction.data import load_banking77
-from examples.banking77_scores._data import PartitionPredictions, split_calibration_pool
+from examples.banking77.scores._data import PartitionPredictions, split_calibration_pool
 
 
 class Request(TypedDict):

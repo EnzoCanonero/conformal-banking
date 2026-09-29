@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ..banking77_scores.socop import run_experiment as evaluate_socop
+from ..scores.socop import run_experiment as evaluate_socop
 from ._reference import save_reference, validate_reference
 
 

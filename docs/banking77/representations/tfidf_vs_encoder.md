@@ -178,11 +178,11 @@ Arrows again mean TF-IDF → encoder.
 
 ## Reproduce
 
-Follow the [preparation and evaluation guide](../../../examples/banking77_representations/README.md).
+Follow the [preparation and evaluation guide](../../../examples/banking77/representations/README.md).
 With saved results available, run:
 
 ```bash
-python -m examples.banking77_representations.compare
+python -m examples.banking77.representations.compare
 ```
 
 This reuses the conformal results and evaluates fixed confidence cutoffs on
