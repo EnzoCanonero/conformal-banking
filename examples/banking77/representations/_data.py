@@ -2,7 +2,7 @@ from collections.abc import Mapping
 
 import numpy as np
 
-from conformal_selective_prediction.data import Banking77Data, TextDataset
+from llm_scorekit.data import Banking77Data, TextDataset
 
 from ..scores._data import PreparedData
 

@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from numpy.typing import NDArray
 
-from conformal_selective_prediction import (
+from llm_scorekit import (
     automated_error_rate,
     automation_rate,
     average_set_size,
@@ -21,8 +21,8 @@ from conformal_selective_prediction import (
     lac_scores,
     singleton_mask,
 )
-from conformal_selective_prediction.data import load_banking77
-from conformal_selective_prediction.models import fit_tfidf_classifier
+from llm_scorekit.data import load_banking77
+from llm_scorekit.models import fit_tfidf_classifier
 
 
 DATA_DIRECTORY = Path("data/raw/banking77")

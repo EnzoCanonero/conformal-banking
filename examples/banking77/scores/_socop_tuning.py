@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from conformal_selective_prediction import (
+from llm_scorekit import (
     conformal_quantile,
     singleton_mask,
     socop_prediction_sets,

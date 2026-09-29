@@ -9,7 +9,7 @@ from time import perf_counter
 import numpy as np
 from numpy.typing import NDArray
 
-from conformal_selective_prediction.models.encoder import ENCODER_CONFIG, encode_texts
+from llm_scorekit.models.encoder import ENCODER_CONFIG, encode_texts
 
 
 # Identify the ordered input records without storing their raw text in the cache.

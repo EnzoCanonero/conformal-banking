@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from conformal_selective_prediction import (
+from llm_scorekit import (
     conformal_quantile,
     lac_prediction_sets,
     lac_scores,

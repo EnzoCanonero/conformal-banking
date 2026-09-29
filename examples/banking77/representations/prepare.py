@@ -9,7 +9,7 @@ import numpy as np
 from numpy.typing import NDArray
 from sklearn.linear_model import LogisticRegression
 
-from conformal_selective_prediction.data import TextDataset, load_banking77
+from llm_scorekit.data import TextDataset, load_banking77
 
 from ..scores._artifacts import (
     load_manifest,

@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from conformal_selective_prediction import (
+from llm_scorekit import (
     aps_prediction_sets,
     aps_scores,
     automated_error_rate,

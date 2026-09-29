@@ -1,7 +1,7 @@
 from importlib.metadata import version
 from pathlib import Path
 
-from conformal_selective_prediction import (
+from llm_scorekit import (
     aps_prediction_sets,
     aps_scores,
     conformal_quantile,

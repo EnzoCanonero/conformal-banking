@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
-from conformal_selective_prediction.data import TextDataset
+from llm_scorekit.data import TextDataset
 
 
 @dataclass

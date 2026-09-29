@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from conformal_selective_prediction import (
+from llm_scorekit import (
     aps_prediction_sets,
     aps_scores,
     average_set_size,

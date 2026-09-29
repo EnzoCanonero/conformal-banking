@@ -14,6 +14,10 @@ python -m pip install -e .
 python -m examples.api.quickstart
 ```
 
+The distribution name used by pip is `llm-scorekit`; Python imports use
+`llm_scorekit`. If the repository is already installed, rerun the editable
+installation above after this namespace change.
+
 The core requires only NumPy. This example needs no model, downloaded data or
 optional dependencies. It uses ten hand-written calibration rows and five
 evaluation rows for `billing`, `delivery` and `returns`, with an 80% coverage
@@ -54,7 +58,7 @@ The complete runnable example supplies all four arrays.
 ```python
 from pathlib import Path
 
-from conformal_selective_prediction import calibrate, load_policy, save_policy
+from llm_scorekit import calibrate, load_policy, save_policy
 
 class_names = ("billing", "delivery", "returns")
 policy = calibrate(
@@ -97,7 +101,7 @@ an example, not a recommended value for every dataset.
 Use the existing metrics on a separate labelled evaluation sample:
 
 ```python
-from conformal_selective_prediction import (
+from llm_scorekit import (
     automated_error_rate,
     automation_rate,
     average_set_size,

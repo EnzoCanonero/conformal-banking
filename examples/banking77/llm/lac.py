@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from conformal_selective_prediction import (
+from llm_scorekit import (
     conformal_quantile,
     lac_prediction_sets,
     lac_scores,

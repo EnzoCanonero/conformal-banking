@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 
-from conformal_selective_prediction import binomial_confidence_interval
+from llm_scorekit import binomial_confidence_interval
 
 
 # Keep class-level counts and coverage intervals separate from marginal coverage.

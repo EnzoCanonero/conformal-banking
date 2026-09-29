@@ -7,8 +7,8 @@ from uuid import uuid4
 import numpy as np
 from sklearn.pipeline import Pipeline
 
-from conformal_selective_prediction.data import load_banking77
-from conformal_selective_prediction.models import fit_tfidf_classifier
+from llm_scorekit.data import load_banking77
+from llm_scorekit.models import fit_tfidf_classifier
 
 from ._artifacts import save_manifest, save_prepared_seed
 from ._data import PreparedData, predict_partition, split_calibration_pool

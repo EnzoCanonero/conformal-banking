@@ -2,7 +2,7 @@
 
 The API quickstart shows how to use the library with your own model outputs.
 The studies show how the methods work and how the project developed. Both use
-the same underlying functions in [src](../src/conformal_selective_prediction/).
+the same underlying functions in [src](../src/llm_scorekit/).
 
 ## API — use the decision layer
 

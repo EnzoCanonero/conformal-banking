@@ -35,7 +35,7 @@ Install the existing scikit-learn extra with `python -m pip install -e ".[exampl
 Then load the data in Python:
 
 ```python
-from conformal_selective_prediction.data import load_banking77
+from llm_scorekit.data import load_banking77
 
 data = load_banking77("data/raw/banking77", random_seed=42)
 

@@ -5,7 +5,7 @@ from typing import Any, TypedDict
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from conformal_selective_prediction.data import load_banking77
+from llm_scorekit.data import load_banking77
 from examples.banking77.scores._data import PartitionPredictions, split_calibration_pool
 
 

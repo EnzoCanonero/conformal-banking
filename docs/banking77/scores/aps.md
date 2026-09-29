@@ -51,10 +51,10 @@ Deferring most cases has not isolated a reliably easier subset.
 
 ## Why does APS automate so little?
 
-The [implemented score](../../../src/conformal_selective_prediction/scores.py)
+The [implemented score](../../../src/llm_scorekit/scores.py)
 sorts probabilities from largest to smallest, preserves class order for ties,
 and accumulates probability **through the candidate label itself**. The
-[set rule](../../../src/conformal_selective_prediction/prediction_sets.py)
+[set rule](../../../src/llm_scorekit/prediction_sets.py)
 includes labels whose score is at most the calibrated threshold `q`. It neither
 randomizes the boundary nor adds the label that crosses it.
 

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 
-from conformal_selective_prediction import (
+from llm_scorekit import (
     automated_error_rate,
     automation_rate,
     average_set_size,
