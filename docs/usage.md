@@ -32,6 +32,37 @@ Rerunning it replaces that demo file.
 The [API mini notebook](../notebooks/api/01_quickstart.ipynb) walks through the
 same workflow cell by cell.
 
+### Run with Docker
+
+With Docker running, build and run from the repository root:
+
+```bash
+docker build -t llm-scorekit:local .
+docker run --rm llm-scorekit:local
+```
+
+The image installs the core package and runs the same quickstart on CPU. It
+does not include datasets, notebooks or model backends; Qwen with MLX/Metal
+remains a separate native-Mac workflow. The Python base image is pinned by
+digest and the build backend by version; core dependencies come from
+`pyproject.toml`.
+
+The command above removes the container and its output after execution. To keep
+the policy on your machine, use this command on macOS or Linux instead:
+
+```bash
+mkdir -p outputs/docker
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  --mount type=bind,source="$(pwd)/outputs/docker",target=/app/outputs \
+  llm-scorekit:local
+```
+
+The policy is saved to `outputs/docker/quickstart/policy.json`, separately from
+the local quickstart's output. Rerunning this command replaces that Docker demo
+file. The user option gives the container your user and group IDs so files in
+the mounted directory are written with your permissions.
+
 ## Prepare your inputs
 
 - **One row per request, one column per class.** Supply a two-dimensional array

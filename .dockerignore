@@ -1,0 +1,16 @@
+# Send only the files needed for the API quickstart build.
+**
+!Dockerfile
+!.dockerignore
+!pyproject.toml
+!README.md
+!LICENSE
+!src/
+!src/llm_scorekit/
+!src/llm_scorekit/**
+!examples/
+!examples/api/
+!examples/api/quickstart.py
+**/__pycache__
+**/*.py[cod]
+**/.env*
