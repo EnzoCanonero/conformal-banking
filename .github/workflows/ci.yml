@@ -1,4 +1,4 @@
-# Runs linting, type checks, and tests on pushes and pull requests.
+# Checks source quality, installed distributions, and the Docker quickstart.
 name: Tests
 
 on:
@@ -10,18 +10,45 @@ on:
 permissions:
   contents: read
 
-
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        numpy: ["2.0.2", "2.4.6"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
-      - run: python -m pip install -e ".[dev,example]"
-      - run: python -m pytest
+      - name: Build and inspect distributions
+        run: |
+          python -m pip install build twine
+          # The default build creates the wheel from the sdist.
+          python -m build
+          python -m twine check --strict dist/*
+          python .github/check_distribution.py
+
+      - name: Install the wheel without study dependencies
+        run: |
+          python -m venv "$RUNNER_TEMP/package-env"
+          "$RUNNER_TEMP/package-env/bin/python" -m pip install dist/*.whl "numpy==${{ matrix.numpy }}"
+          "$RUNNER_TEMP/package-env/bin/python" -m pip check
+          mkdir "$RUNNER_TEMP/package-check"
+          cp examples/api/quickstart.py "$RUNNER_TEMP/package-check/"
+          cp -R tests "$RUNNER_TEMP/package-check/"
+
+      - name: Run the public workflow outside the checkout
+        working-directory: ${{ runner.temp }}/package-check
+        run: '"$RUNNER_TEMP/package-env/bin/python" quickstart.py'
+
+      - name: Test the installed package
+        working-directory: ${{ runner.temp }}/package-check
+        run: |
+          "$RUNNER_TEMP/package-env/bin/python" -m pip install pytest
+          "$RUNNER_TEMP/package-env/bin/python" -m pytest
 
   quality:
     runs-on: ubuntu-latest
@@ -31,6 +58,16 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: python -m pip install -e ".[dev,example]"
-      - run: python -m ruff check src examples tests
+      - run: python -m pip install -e ".[dev,example]" -c constraints/studies.txt
+      - run: python -m ruff check src examples tests .github/check_distribution.py
       - run: python -m mypy
+      - run: python -m mypy .github/check_distribution.py
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the quickstart image
+        run: docker build --tag llm-scorekit:ci .
+      - name: Run the quickstart without network access
+        run: docker run --rm --network none llm-scorekit:ci
