@@ -24,7 +24,7 @@ on cached encoder predictions to produce summary metrics and figures.
 Install the optional dependency from the repository root:
 
 ```bash
-python -m pip install -e ".[example,encoder]"
+python -m pip install -e ".[example,encoder]" -c constraints/studies.txt
 ```
 
 A small cache example, without loading BANKING77 or training a classifier:

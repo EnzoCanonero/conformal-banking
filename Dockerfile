@@ -5,12 +5,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml README.md LICENSE ./
+COPY pyproject.toml README.md LICENSE MANIFEST.in ./
+COPY constraints/studies.txt ./constraints/studies.txt
 COPY src/ ./src/
 
 # Install the core package with a fixed build backend, without model extras.
 RUN python -m pip install --no-cache-dir setuptools==84.0.0 \
-    && python -m pip install --no-cache-dir --no-build-isolation .
+    && python -m pip install --no-cache-dir --no-build-isolation \
+        --constraint constraints/studies.txt .
 
 COPY examples/api/quickstart.py ./quickstart.py
 

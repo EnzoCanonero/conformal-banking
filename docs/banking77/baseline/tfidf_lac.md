@@ -184,7 +184,7 @@ the data. With Python 3.12 and the [pinned data](../../../data/README.md#downloa
 from the repository root:
 
 ```bash
-python -m pip install -e ".[example]"
+python -m pip install -e ".[example]" -c constraints/studies.txt
 python -m examples.banking77.baseline.validation
 ```
 

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from math import sqrt
 from statistics import NormalDist
 
@@ -23,7 +24,7 @@ def automation_rate(automation_mask: ArrayLike) -> float:
 # Measure classification error among samples selected for automation.
 # Measure the classification error rate on automated samples only.
 def automated_error_rate(
-    predictions: ArrayLike,
+    predictions: ArrayLike | Sequence[int | None],
     labels: ArrayLike,
     automation_mask: ArrayLike,
 ) -> float:

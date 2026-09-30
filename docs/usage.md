@@ -32,6 +32,27 @@ Rerunning it replaces that demo file.
 The [API mini notebook](../notebooks/api/01_quickstart.ipynb) walks through the
 same workflow cell by cell.
 
+### Library dependencies and study versions
+
+The core requires Python 3.12 or later and `numpy>=2.0.2,<3`. The compatibility
+checks use Python 3.12 with NumPy 2.0.2 and 2.4.6; this does not mean every
+intermediate version or platform has been tested. Models and study tools remain
+optional and are not needed to calibrate, save or apply a policy.
+
+For the studies, retain their reference NumPy version with the
+[study constraints](../constraints/studies.txt), alongside the pinned optional
+dependencies in `pyproject.toml`:
+
+```bash
+python -m pip install -e ".[example]" -c constraints/studies.txt
+```
+
+Add `encoder` for the frozen text encoder, `llm` for the native Apple-silicon
+Qwen workflow, or `notebook` for notebook execution. For example, use
+`".[example,llm]"` with the same constraints for Qwen. These direct-dependency
+pins are not a full environment lock; retain the study's recorded package
+versions, model revision and scoring configuration when reproducing results.
+
 ### Run with Docker
 
 With Docker running, build and run from the repository root:
@@ -44,8 +65,8 @@ docker run --rm llm-scorekit:local
 The image installs the core package and runs the same quickstart on CPU. It
 does not include datasets, notebooks or model backends; Qwen with MLX/Metal
 remains a separate native-Mac workflow. The Python base image is pinned by
-digest and the build backend by version; core dependencies come from
-`pyproject.toml`.
+digest and the build backend by version; the study constraints keep NumPy at
+the reference version even though the library accepts a wider range.
 
 The command above removes the container and its output after execution. To keep
 the policy on your machine, use this command on macOS or Linux instead:

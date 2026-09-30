@@ -110,7 +110,7 @@ sampling conditions for BANKING77.
 From the repository root, use Python 3.12 or later:
 
 ```bash
-python -m pip install -e ".[example,dev]"
+python -m pip install -e ".[example,dev]" -c constraints/studies.txt
 python -m examples.synthetic.multiclass
 python -m pytest tests/test_conformal.py tests/test_selection.py
 ```

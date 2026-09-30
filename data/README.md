@@ -31,7 +31,8 @@ the shared label order.
 
 ## Load and split
 
-Install the existing scikit-learn extra with `python -m pip install -e ".[example]"`.
+Install the scikit-learn extra with the study versions:
+`python -m pip install -e ".[example]" -c constraints/studies.txt`.
 Then load the data in Python:
 
 ```python

@@ -64,7 +64,8 @@ does not establish the exchangeability needed by the coverage guarantee.
 ## Run from the repository root
 
 Use the existing `llm-scorekit` environment. If setting up another Apple-silicon
-environment, install `python -m pip install -e ".[example,llm]"`. Keep the local
+environment, install
+`python -m pip install -e ".[example,llm]" -c constraints/studies.txt`. Keep the local
 files described in [the data guide](../../../data/README.md) available.
 
 Preview the sample sizes, cache status and estimated time without importing MLX,

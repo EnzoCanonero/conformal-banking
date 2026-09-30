@@ -40,10 +40,11 @@ walkthroughs remain in [notebooks](../notebooks/).
 
 ### Run a study
 
-Follow the root [installation instructions](../README.md#run-locally), then run
-commands from the repository root. The synthetic example needs no downloaded data:
+From the repository root, install the study dependencies with their reference
+NumPy version. The synthetic example needs no downloaded data:
 
 ```bash
+python -m pip install -e ".[example]" -c constraints/studies.txt
 python -m examples.synthetic.multiclass
 ```
 

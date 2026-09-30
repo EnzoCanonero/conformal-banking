@@ -1,0 +1,4 @@
+# Preserve the reference NumPy version for studies and the Docker quickstart.
+# Optional study dependencies remain pinned in pyproject.toml.
+# This is not a complete environment lock.
+numpy==2.4.6
